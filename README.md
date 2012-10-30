@@ -1,6 +1,6 @@
-## Welcome to MongoMongo
+## Welcome to ActiveORM
 
-MongoMongo is a Java ODM framework for MongoDB. Just like [ActiveORM](https://github.com/allwefantasy/active_orm),simple,convenient,and powerfull.
+ActiveORM is a Java ORM framework for Mysql. 
 
 
 ## Getting Started
@@ -8,7 +8,7 @@ MongoMongo is a Java ODM framework for MongoDB. Just like [ActiveORM](https://gi
 1. download it
 
 ```java
-   git clone git://github.com/allwefantasy/mongomongo.git
+   git clone git://github.com/allwefantasy/active_orm.git
 ```
 
 2. intergrated to your application. 
@@ -16,24 +16,19 @@ MongoMongo is a Java ODM framework for MongoDB. Just like [ActiveORM](https://gi
 
 
 ```java
-
        // Actually this means you should put your mongo configuration in a yaml file.And then load it.
+
         InputStream inputStream = Main.class.getResourceAsStream("application_for_test.yml");
         Settings settings = InternalSettingsPreparer.simplePrepareSettings(ImmutableSettings.Builder.EMPTY_SETTINGS,
                 inputStream);
 
-        //when settings have been build ,now we can configure MongoMongo
-        try {
-            MongoMongo.CSDNMongoConfiguration csdnMongoConfiguration = new MongoMongo.CSDNMongoConfiguration("development", settings, Main.class);
-            MongoMongo.configure(csdnMongoConfiguration);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
+        //when settings have been build ,now we can configure ActiveORM
+        JPA.CSDNORMConfiguration csdnormConfiguration = new JPA.CSDNORMConfiguration("development", settings, Main.class);
+        JPA.configure(csdnormConfiguration);
         //Everything is done.Now free to use! 
-        Blog blog = Blog.create(map("userName", "yes", "_id", 1000));
-        blog.save();
-        blog = Blog.findById(1000);
+        Tag.findAll();
+       
+        
    
 ``` 
 
