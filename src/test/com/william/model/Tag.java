@@ -1,4 +1,4 @@
-package test.com.example.model;
+package test.com.william.model;
 
 import net.csdn.annotation.callback.AfterSave;
 import net.csdn.annotation.validate.Validate;

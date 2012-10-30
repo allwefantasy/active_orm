@@ -53,7 +53,7 @@ orm:
 
 application:
 
-    model:      test.com.example.model
+    model:      test.com.william.model
 
 
 

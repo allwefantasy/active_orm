@@ -1,4 +1,4 @@
-package test.com.example.model;
+package test.com.william.model;
 
 import net.csdn.jpa.model.Model;
 

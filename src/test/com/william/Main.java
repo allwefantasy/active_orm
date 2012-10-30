@@ -1,10 +1,10 @@
-package test.com.example;
+package test.com.william;
 
 import net.csdn.common.settings.ImmutableSettings;
 import net.csdn.common.settings.InternalSettingsPreparer;
 import net.csdn.common.settings.Settings;
 import net.csdn.jpa.JPA;
-import test.com.example.model.Tag;
+import test.com.william.model.Tag;
 
 import java.io.InputStream;
 
