@@ -26,9 +26,9 @@ public class FirstFilter implements Filter {
                     inputStream);
 
             //when settings have been build ,now we can configure MongoMongo
-            try {
-                MongoMongo.CSDNMongoConfiguration csdnMongoConfiguration = new MongoMongo.CSDNMongoConfiguration("development", settings, FirstFilter.class);
-                MongoMongo.configure(csdnMongoConfiguration);
+            try//configure ORM
+               JPA.CSDNORMConfiguration csdnormConfiguration = new JPA.CSDNORMConfiguration("development", settings, Main.class);
+               JPA.configure(csdnormConfiguration);
             } catch (Exception e) {
                 e.printStackTrace();
             }
