@@ -1,7 +1,75 @@
 ## Welcome to ActiveORM
 
 
-ActiveORM is a Java ORM framework for Mysql. 
+ActiveORM is a Java ORM framework.
+
+
+##Sample code
+
+```sql
+--tag
+CREATE TABLE `tag` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) DEFAULT NULL,
+  `tag_synonym_id` int(11) DEFAULT NULL,
+  `weight` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
+
+--tag_synonym
+CREATE TABLE `tag_synonym` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `tag_synonym_name` varchar(32) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+```
+
+```java
+
+public class Tag extends Model {
+    @Validate
+    private final static Map $name = map(
+    presence, map("message", "name should not empty"),
+    uniqueness, map("message", "name have already exists")
+    );
+
+    @ManyToOne
+    private TagSynonym tag_synonym;
+
+    public Association tag_synonym(){
+      throw new AutoGeneration();
+    }
+}
+
+public class TagSynonym extends Model {
+    @OneToMany
+    private List<Tag> tags = list();
+
+    public Association tags(){
+          throw new AutoGeneration();
+        }
+}
+
+
+public class Usage{
+   public void main(String[] args){
+
+       TagSynonym tagSynonym = TagSynonym.where("tag_synonym_name=:name",map("name","wow")).limit(1).singleFetch();
+       tagSynonym.tags().add(Tag.create(map("name","i am tag")));
+       Tag tag = tagSynonym.tags().where("name=:name",map("name","i am tag"))).singleFetch();
+       System.out.println(tag.attr("name",String.class));
+       //or you can define name property in Tag so you can access name directly without using `attr` method to get name.
+   }
+
+}
+
+```
+
+
+
+
+
 
 ## Getting Started
 
@@ -78,53 +146,7 @@ application:
 ```
 
 
-#### create tables and models
 
-Here we  have a little complex demo. We create tag system .
-We have four tables,tag,tag_group,blog_tag,tag_synonym
-
-```sql
---tag
-CREATE TABLE `tag` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) DEFAULT NULL,
-  `tag_synonym_id` int(11) DEFAULT NULL,
-  `weight` int(11) DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
-
---tag_synonym
-CREATE TABLE `tag_synonym` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(32) DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-```
-
-after creating tables,now we can step to  create models.
-
-```java
-
-public class Tag extends Model {
-    @Validate
-    private final static Map $name = map(
-    presence, map("message", "name should not empty"),
-    uniqueness, map("message", "name have already exists")
-    );
-
-    @ManyToOne
-    private TagSynonym tag_synonym;
-}
-
-public class TagSynonym extends Model {
-    @OneToMany
-    private List<Tag> tags = list();
-}
-```
-
-
-That's all!!! No Properties! No Getter/Setter! Very Concise.
 
 
 #### Retrieving Objects from the Database
