@@ -5,13 +5,8 @@ ActiveORM is a Java ORM framework for Mysql.
 
 ## Getting Started
 
-1. Download it
 
-```java
-   git clone git://github.com/allwefantasy/active_orm.git
-```
-
-2. Integrate following code  to your application.
+#### Integrate following code  to your application.
 
 When you write a  web application,you should create a filter
 For example:
@@ -38,10 +33,6 @@ public class FirstFilter implements Filter {
                 e.printStackTrace();
             }
 
-            //Everything is done.Now free to use!
-            Blog blog = Blog.create(map("userName", "yes", "_id", 1000));
-            blog.save();
-            blog = Blog.findById(1000);
     }
     public void destroy() {
 
@@ -50,7 +41,7 @@ public class FirstFilter implements Filter {
 
 ```
 
-Then configure it in web.xml
+and then modify your web.xml file
 
 ```xml
 <filter>
@@ -67,7 +58,7 @@ Then configure it in web.xml
 
 When you write Normal Application,just put the code in filter to your main method.
 
-3. configuration file demo
+#### configuration file demo
 
 ```java
 development:
@@ -87,7 +78,7 @@ application:
 ```
 
 
-4. create tables , models and using them.
+#### create tables and models
 
 Here we  have a little complex demo. We create tag system .
 We have four tables,tag,tag_group,blog_tag,tag_synonym
