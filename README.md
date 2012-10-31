@@ -1,6 +1,7 @@
 ## Welcome to MongoMongo
 
-MongoMongo is a Java ODM framework for MongoDB. Just like [ActiveORM](https://github.com/allwefantasy/active_orm),simple,convenient,and powerfull.
+MongoMongo is a Java ODM framework for MongoDB.
+Just like [ActiveORM](https://github.com/allwefantasy/active_orm),simple,convenient,and powerful.
 
 
 ## Getting Started
@@ -11,31 +12,62 @@ MongoMongo is a Java ODM framework for MongoDB. Just like [ActiveORM](https://gi
    git clone git://github.com/allwefantasy/mongomongo.git
 ```
 
-2. intergrated to your application. 
+2. integrate following code  to your application.
 
+2.1 web application
 
-
+first create a filter
 ```java
+public class FirstFilter implements Filter {
 
-       // Actually this means you should put your mongo configuration in a yaml file.And then load it.
-        InputStream inputStream = Main.class.getResourceAsStream("application_for_test.yml");
-        Settings settings = InternalSettingsPreparer.simplePrepareSettings(ImmutableSettings.Builder.EMPTY_SETTINGS,
-                inputStream);
+    public void doFilter(ServletRequest req, ServletResponse res,
+            FilterChain chain) throws IOException, ServletException {
+        chain.doFilter(req, res);
+    }
+    public void init(FilterConfig config) throws ServletException {
+            // Actually this means you should put your mongo configuration in a yaml file.And then load it.
+            InputStream inputStream = FirstFilter.class.getResourceAsStream("application_for_test.yml");
+            Settings settings = InternalSettingsPreparer.simplePrepareSettings(ImmutableSettings.Builder.EMPTY_SETTINGS,
+                    inputStream);
 
-        //when settings have been build ,now we can configure MongoMongo
-        try {
-            MongoMongo.CSDNMongoConfiguration csdnMongoConfiguration = new MongoMongo.CSDNMongoConfiguration("development", settings, Main.class);
-            MongoMongo.configure(csdnMongoConfiguration);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+            //when settings have been build ,now we can configure MongoMongo
+            try {
+                MongoMongo.CSDNMongoConfiguration csdnMongoConfiguration = new MongoMongo.CSDNMongoConfiguration("development", settings, FirstFilter.class);
+                MongoMongo.configure(csdnMongoConfiguration);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
-        //Everything is done.Now free to use! 
-        Blog blog = Blog.create(map("userName", "yes", "_id", 1000));
-        blog.save();
-        blog = Blog.findById(1000);
-   
-``` 
+            //Everything is done.Now free to use!
+            Blog blog = Blog.create(map("userName", "yes", "_id", 1000));
+            blog.save();
+            blog = Blog.findById(1000);
+    }
+    public void destroy() {
+
+    }
+}
+
+```
+
+then configure it in web.xml
+
+```xml
+<filter>
+    <filter-name>FirstFilter</filter-name>
+    <filter-class>
+        com.example.filters.FirstFilter
+    </filter-class>
+</filter>
+<filter-mapping>
+    <filter-name>FirstFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+</filter-mapping>
+```
+
+Normal Application
+
+just make should the configuration code start up first;
 
 3 configuration file demo
 
@@ -59,10 +91,11 @@ application:
 
 4 create tables , models and using them.
 
-first step,create some tables;
+Here we  have a little complex demo. We create tag system .
+We have four tables,tag,tag_group,blog_tag,tag_synonym
 
 ```sql
---标签表
+--tag
 CREATE TABLE `tag` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) DEFAULT NULL,
@@ -71,24 +104,7 @@ CREATE TABLE `tag` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
 
---标签组。一个标签可以属于多个标签组。一个标签组包含多个标签
-CREATE TABLE `tag_group` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(32) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `id` (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
-
---博客和标签的关联表。存有 博客id和标签id
-CREATE TABLE `blog_tag` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `tag_id` int(11) DEFAULT NULL,
-  `object_id` int(11) DEFAULT NULL,
-  `created_at` bigint(20) DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
---标签近义词组。一个标签只可能属于一个标签近义词
+--tag_synonym
 CREATE TABLE `tag_synonym` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(32) DEFAULT NULL,
@@ -97,38 +113,20 @@ CREATE TABLE `tag_synonym` (
 
 ```
 
-now create models
+after creating tables,now we can step to  create models.
 
 ```java
 
 public class Tag extends Model {
     @Validate
     private final static Map $name = map(
-    presence, map("message", "{}字段不能为空"),
-    uniqueness, map("message", "{}字段不能重复")
+    presence, map("message", "name should not empty"),
+    uniqueness, map("message", "name have already exists")
     );
 
-    @OneToMany
-    private List<BlogTag> blog_tags = list();
-
-    @ManyToMany
-    private List<TagGroup> tag_groups = list();
-}
-
-
-
-public class BlogTag extends Model {
-
     @ManyToOne
-    private Tag tag;
+    private TagSynonym tag_synonym;
 }
-
-
-public class TagGroup extends Model {
-    @ManyToMany
-    private List<Tag> tags = list();
-}
-
 
 public class TagSynonym extends Model {
     @OneToMany
@@ -137,124 +135,254 @@ public class TagSynonym extends Model {
 ```
 
 
-That's all!!! Proerties in Model is Optinal. The only thing is to write validators and declare relation .
-
-Now we can use all these Models;
-
-you can query a  tag object like this:
-```
-Tag tag = Tag.find(17);
-String name = tag.attr("name",String.class);
-```
-
-if you wanna assingh a value to name,you can do it like this:
-
-```java
-tag.attr("name","jack");
-```
-
-Of course, you also can define 'name' property in Tag Model.
-
-if you have a tagGroup,now wanna add a tag to tagGroup.Do like follows:
-
-```java
-tagGroup.associate("tags").add(tag);
-```
+That's all!!! No Properties! No Getter/Setter! Very Concise.
 
 
-####Association
+#### Retrieving Objects from the Database
 
-ActiveORM support three kind of Relations.
+To retrieve objects from the database, ActiveORM provides several finder methods.
+Each finder method allows you to pass arguments into it to perform certain queries on your database without
+writing raw SQL.
 
-* OneToOne
-* OneToMany
-* ManyToMany
+The methods are:
 
-Assume you have tagGroup object,now wanna add a tag,do like this：
+* where
+* select
+* group
+* order
+* limit
+* offset
+* joins
+* from
+
+All of the above methods return an instance of net.csdn.jpa.model.JPQL or net.csdn.jpa.association.Association
+
+
+1.1 Retrieving a Single Object
+
+1.1.1 Using a Primary Key
+Using Model.find(primary_key), you can retrieve the object corresponding to the specified primary key that matches any supplied options.
+For example:
 
 ```java
-tagGroup.associate("tags").add(tag);
+//Find the tag with primary key (id) 10.
+Tag tag = Tag.find(10)
 ```
 
-remove their relationship like this:
+1.1.2 Normal way
+when you make sure that only one object will be found,then use method like this
 
-```java
-tagGroup.associate("tags").remove(tag);
 ```
-you can also define a empty method like this in TagGroup class:
+ Tag tag = Tag.where("name=:name",map("name","java")).singleFetch();
+```
+
+1.2  Retrieving Multi Objects
+
+1.2.1 Using multi primary keys
 
 ```java
-public class TagGroup extends Model {
-    @OneToMany
-    private List<Tag> tags = list();
-    public Association tags(){throw new AutoGeneration();}
+//Find the tag with primary key (id) 10,11,12
+List<Tag> tag = Tag.find(list(10,11,12))
+```
+
+1.2.2 Normal Way
+
+```
+List<Tag> tags = Tag.where("name=:name",map("name","java")).fetch();
+```
+
+
+1.3 Conditions
+
+The where method allows you to specify conditions to limit the records returned, representing the WHERE-part of the SQL statement.
+Conditions can only specified as a string,and you should pass parameters to them by named parameter.
+
+for example:
+
+```java
+List<Tag> tags = Tag.where("name=:name and id > :id",map("name","java","id",10)).fetch();
+```
+
+1.4 Ordering
+
+To retrieve records from the database in a specific order, you can use the order method.
+For example, if you’re getting a set of records and want to order them in ascending order by the id field in your table:
+
+```java
+List<Tag> tags = Tag.order("id asc").fetch();
+//or
+List<Tag> tags = Tag.order("id asc,created_at desc").fetch();
+```
+
+
+1.5 Selecting Specific Fields
+
+By default, Model.find selects all the fields from the result set using select *.
+To select only a subset of fields from the result set, you can specify the subset via the select method.
+
+```java
+    List<Map> tags = Tag.select("id,name").fetch();
+```
+
+Notice that the return result is list of map.
+
+1.6 Limit and Offset
+
+```java
+   List<Tag> tags = Tag.offset(0).limit(10).fetch();
+```
+
+
+1.7 Group
+
+To apply a GROUP BY clause to the SQL fired by the finder, you can specify the group method on the find.
+
+```java
+List<Tag> tags = Tag.where("id>10").group("name").fetch();
+```
+
+1.8 Joining Tables
+
+ActiveORM provides a finder method called joins for specifying JOIN clauses on the resulting SQL.
+
+```java
+  List<Tag> tags = Tag.joins("tag_synonym").fetch();
+```
+you also can join many tables at one time:
+
+```java
+List<Tag> tags = Tag.joins("tag_synonym left join  tag_groups left join blog_tags").fetch();
+```
+
+#### Name_Scope
+
+Name_Scope is a powerful way to keep you code more objective and clean.
+For example ,suppose you have a status filed in table like "status". Assume
+status=1 is active tag. Normally,you will retrieve them using query like this:
+
+```java
+ List<Tag> activeTags = Tag.where("status=1").limit(10).fetch();
+```
+
+With Name_Scope,you can define a method in Model
+For example:
+
+```java
+public class Tag extends Model {
+    public static JPQL active(){
+      return where("status=1");
+    }
+    // more content.......
 }
 ```
 
-now you can do stuff like this:
+now you can do it like this:
 
 ```java
-tagGroup.tags().add(tag);
-//or
-tagGroup.tags().remove(tag);
-//query
-List<Tag> tags = tagSynonym.tags().where("id>10").fetch(); 
+List<Tag> tags = Tag.active().where("id>10").join("tag_groups").offset(0).limit(15).fetch();
 ```
 
-ActiveORM query is powerfull.
+Cool? HaHa
 
-1.1 find by id
+
+#### Associations
+
+Suppose we wanted to add a new tag for an existing tag_synonym. We could  do something like this:
 
 ```java
-
-Tag.findById(10)
-//或者
-Tag.find(10)
-
+tag_synonym.associate("tags").add(Tag.create(map("name","i am a new tag")));
 ```
 
-1.2 find by ids
+At first glance you must be curious about `associate("tags")`.
+In very model,there are many methods generated by ActiveORM,you cannot seen them but they definitely exits.
+You can invoke them using `associate()` or 'm()' method.
+Well,i guess you wanna IDE can give you some hint,so ,you can define a empty method and tell ActiveORM to implements it.
+for example:
 
 ```java
-Tag.find(list(1,2,,4,5))
+class TagSynonym extends Model{
+
+  public Association tags(){throw new AutoGeneration();}
+  //other stuffs
+  ....
+}
 ```
-1.3 where condition query
+
+Now ,you can invoke add a tag like this：
 
 ```java
-Tag.where("id=:id",map("id",7)).fetch();
+  List<Tag> tags = tagSynonym.tags().where("id>10").fetch();
 ```
-
-
-more complex example:
-
+For ManyToMany relation,it is hard in hibernate ,you should write a lot code.
 
 ```java
-Tag.where("tag_synonym=:tag_synonym",map("tag_synonym",tag_synonym));
+tagGroup.getTags().add(tag);
+tag.getTagGroups.add(tagGroup);
+tag.save();
 ```
 
+But with ActiveORM, you just do like this:
 
-1.4 order
+```
+ tagGroup.tags().add(tag);
+ //if you wanna delete tag
+ tagGroup.tags().remove(tag);
+```
+
+So association in ActiveORM is easy to use.
+
+For now ,ActiveORM support three kinds of relation.
+
+*OneToOne
+*OneToMany
+*ManyToMany
+
+#### Model methods and Instance Methods available when you extends  Model
+
+Model static methods
 
 ```java
-Tag.order("id desc")
+    Model.create(map)
+    Model.deleteAll()
+    Model.count()
+    Model.count(String query, Object... params)
+    Model.findAll()
+    Model.findById(Object id)
+    Model.all()
+    Model.delete(String query, Object... params)
 
-
-Tag.order("id desc,name asc")
+    Model.where(String whereCondition, Object... params)
+    Model.join(String join)
+    Model.order(String order)
+    Model.offset(int offset)
+    Model.limit(int limit)
+    Model.select(String select)
 ```
 
-1.5 joins
-
+Model instance methods
 
 ```java
-Tag.joins("tag_synonym").fetch();
+    model.save()
+    model.valid()
+    model.update()
+    model.refresh()
+    model.delete()
+
 ```
 
+#### Raw SQL Support
 
-you also can join many models at one time:
+Sometimes you need to write complex sql,so ActiveORM support Raw sql.
+It's easy to use.
 
 ```java
-Tag.joins("tag_synonym left join  tag_groups left join blog_tags").fetch();
+  List<Map> tags = Model.nativeSqlClient().execute("select * from tag where name=?","java");
 ```
+
+#### Validations and Callbacks
+
+
+
 
 
 
