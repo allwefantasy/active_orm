@@ -1,7 +1,8 @@
-## Welcome to MongoMongo
+## Welcome to ActiveORM
 
-MongoMongo is a Java ODM framework for MongoDB.
-Just like [ActiveORM](https://github.com/allwefantasy/active_orm),simple,convenient,and powerful.
+
+ActiveORM is a Java ORM framework for Mysql. 
+
 
 
 ## Getting Started
@@ -9,7 +10,7 @@ Just like [ActiveORM](https://github.com/allwefantasy/active_orm),simple,conveni
 1. download it
 
 ```java
-   git clone git://github.com/allwefantasy/mongomongo.git
+   git clone git://github.com/allwefantasy/active_orm.git
 ```
 
 2. integrate following code  to your application.
@@ -18,6 +19,7 @@ Just like [ActiveORM](https://github.com/allwefantasy/active_orm),simple,conveni
 
 first create a filter
 ```java
+
 public class FirstFilter implements Filter {
 
     public void doFilter(ServletRequest req, ServletResponse res,
@@ -66,8 +68,6 @@ then configure it in web.xml
 ```
 
 Normal Application
-
-just make should the configuration code start up first;
 
 3 configuration file demo
 
