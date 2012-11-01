@@ -3,6 +3,9 @@
 
 ActiveORM is a Java ORM framework.
 
+The philosophy of ActiveORM is to provide a familiar API to Java developers who have been using Rails ActiveRecord,while leveraging the power of all Hibernate.
+ActiveORM is a really cool ORM in Java community corresponding to original Hibernate API.
+Coding for fun Yay!
 
 ##Sample code
 
@@ -407,7 +410,7 @@ It's easy to use.
   List<Map> tags = Model.nativeSqlClient().execute("select * from tag where name=?","java");
 ```
 
-#### Validations and Callbacks
+#### Validations and Callbacks (coming soon...)
 
 
 
