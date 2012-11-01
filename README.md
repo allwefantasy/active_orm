@@ -145,6 +145,23 @@ application:
        
 ```
 
+Yay,forget something,you also need create META-INF/persistence.xml in your classpath(for example src).
+then copy&paste follow content to you file:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="http://java.sun.com/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd"
+             version="2.0">
+    <persistence-unit name="{}">
+        {}
+        <properties>
+        </properties>
+    </persistence-unit>
+</persistence>
+```
+
 
 
 
