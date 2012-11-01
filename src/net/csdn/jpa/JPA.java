@@ -319,7 +319,7 @@ public class JPA {
 
         private void loadClass(CtClass ctClass) {
             try {
-                Class<Model> clzz = ctClass.toClass();
+                Class<Model> clzz = ctClass.toClass(JPA.classLoader(), JPA.class.getProtectionDomain());
                 JPA.models.put(clzz.getSimpleName(), clzz);
             } catch (CannotCompileException e) {
                 e.printStackTrace();
