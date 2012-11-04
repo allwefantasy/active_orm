@@ -79,7 +79,8 @@ public class Usage{
 
 #### Integrate following code  to your application.
 
-When you write a  web application,you should create a filter
+When you write a  web application,you should create a filter.
+
 For example:
 
 ```java
@@ -91,12 +92,12 @@ public class FirstFilter implements Filter {
         chain.doFilter(req, res);
     }
     public void init(FilterConfig config) throws ServletException {
-            // Actually this means you should put your mongo configuration in a yaml file.And then load it.
+            // Actually this means you should put your ActiveORM configuration in a yaml file.And then load it.
             InputStream inputStream = FirstFilter.class.getResourceAsStream("application_for_test.yml");
             Settings settings = InternalSettingsPreparer.simplePrepareSettings(ImmutableSettings.Builder.EMPTY_SETTINGS,
                     inputStream);
 
-            //when settings have been build ,now we can configure MongoMongo
+            //when settings have been build , we can configure ActiveORM
             try//configure ORM
                JPA.CSDNORMConfiguration csdnormConfiguration = new JPA.CSDNORMConfiguration("development", settings, Main.class);
                JPA.configure(csdnormConfiguration);
@@ -127,28 +128,70 @@ and then modify your web.xml file
 </filter-mapping>
 ```
 
-When you write Normal Application,just put the code in filter to your main method.
 
-#### configuration file demo
 
-```java
+#### ActiveORM configuration file demo
+
+```yaml
+#mode
+mode:
+  development
+#mode=production
+
+###############datasource config##################
+#mysql,mongodb,redis等数据源配置方式
 development:
     datasources:
-       mysql:
+        mysql:
            host: 127.0.0.1
            port: 3306
            database: wow
-           username: root
-           password: csdn.net
+           username: me
+           password: ****
            disable: false
 
+
+production:
+    datasources:
+        mysql:
+           host: 127.0.0.1
+           port: 3306
+           database: wow
+           username: me
+           password: ****
+
+
+orm:
+    show_sql: true
+    pool_min_size: 5
+    pool_max_size: 10
+    timeout: 300
+    max_statements: 50
+    idle_test_period: 3000
+###############application config##################
+# tell ActiveORM where is your model classes
+
+
 application:
-    model:   com.example.model
-    
+    model:      com.example.model
+
+
+###############validator config##################
+validator:
+   format:        net.csdn.validate.impl.Format
+   numericality:  net.csdn.validate.impl.Numericality
+   presence:      net.csdn.validate.impl.Presence
+   uniqueness:    net.csdn.validate.impl.Uniqueness
+   length:        net.csdn.validate.impl.Length
+   associated:    net.csdn.validate.impl.Associated
+
+################ 数据库类型映射 ####################
+type_mapping:  net.csdn.jpa.type.impl.MysqlType
+
        
 ```
 
-Yay,forget something,you also need create META-INF/persistence.xml in your classpath(for example src).
+Oooops,forget something.you also need create META-INF/persistence.xml in your classpath(for example, put it in your src directory).
 then copy&paste follow content to you file:
 
 ```xml
@@ -166,7 +209,7 @@ then copy&paste follow content to you file:
 ```
 
 
-
+When you write Normal Application,just put the code in filter to your main method.
 
 
 #### Retrieving Objects from the Database
