@@ -74,18 +74,28 @@ public class Usage{
 
 
 
-## Getting Started
+## Installation
+
+### Prerequisites
+There are few things you need to have in your toolbox before tackling a web application using ActiveORM.
+
+* A good to advanced knowledge of Java.
+* Have good knowledge of your web framework if using one.
+* A thorough understanding of ORM concepts.
+
+Anyway ,you also  should notice that ActiveORM now is at version 1.0,and more important, for now it only support Mysql.
+
+### Installation
 
 
-#### Integrate following code  to your application.
-
-When you write a  web application,you should create a filter.
+I suppose you use it in a standard Servlet Container like Tomcat,Jetty. In order to make ActiveORM work properly,
+you will write a filter like follows(the core code is in init.The name of filter as yourself)
 
 For example:
 
 ```java
 
-public class FirstFilter implements Filter {
+public class StartUpActiveActiveORMFilter implements Filter {
 
     public void doFilter(ServletRequest req, ServletResponse res,
             FilterChain chain) throws IOException, ServletException {
@@ -117,13 +127,13 @@ and then modify your web.xml file
 
 ```xml
 <filter>
-    <filter-name>FirstFilter</filter-name>
+    <filter-name>StartUpActiveActiveORMFilter</filter-name>
     <filter-class>
-        com.example.filters.FirstFilter
+        com.example.filters.StartUpActiveActiveORMFilter
     </filter-class>
 </filter>
 <filter-mapping>
-    <filter-name>FirstFilter</filter-name>
+    <filter-name>StartUpActiveActiveORMFilter</filter-name>
     <url-pattern>/*</url-pattern>
 </filter-mapping>
 ```
@@ -139,7 +149,6 @@ mode:
 #mode=production
 
 ###############datasource config##################
-#mysql,mongodb,redis等数据源配置方式
 development:
     datasources:
         mysql:
@@ -208,8 +217,6 @@ then copy&paste follow content to you file:
 </persistence>
 ```
 
-
-When you write Normal Application,just put the code in filter to your main method.
 
 
 #### Retrieving Objects from the Database
