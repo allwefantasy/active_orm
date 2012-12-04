@@ -1,6 +1,5 @@
 package net.csdn.modules.persist.mysql;
 
-import com.google.inject.Inject;
 import net.csdn.common.logging.CSLogger;
 import net.csdn.common.logging.Loggers;
 import net.csdn.common.settings.Settings;
@@ -26,7 +25,7 @@ public class MysqlClient {
 
     private Settings settings;
 
-    @Inject
+
     public MysqlClient(DataSourceManager _dataSourceManager, Settings _settings) {
         this.settings = _settings;
         for (Map.Entry<String, DataSource> entry : _dataSourceManager.dataSourceMap().entrySet()) {

@@ -21,6 +21,7 @@ import net.csdn.jpa.model.Model;
 import net.csdn.jpa.type.DBInfo;
 import net.csdn.jpa.type.DBType;
 import net.csdn.jpa.type.impl.MysqlType;
+import net.csdn.validate.ValidatorLoader;
 
 import javax.persistence.DiscriminatorColumn;
 import java.io.DataInputStream;
@@ -72,6 +73,11 @@ public class JPA {
         ormConfiguration = csdnormConfiguration;
         ormConfiguration.buildDefaultDBInfo();
         loadModels();
+        try {
+            new ValidatorLoader().load();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public static synchronized JPAConfig getJPAConfig() {

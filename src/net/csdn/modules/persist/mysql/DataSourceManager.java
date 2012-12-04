@@ -11,7 +11,7 @@ import java.util.Map;
 import static net.csdn.common.logging.support.MessageFormat.format;
 
 /**
- * BlogInfo: WilliamZhu
+ * User: WilliamZhu
  * Date: 12-6-1
  * Time: 下午9:11
  */
@@ -56,9 +56,9 @@ public class DataSourceManager {
             dataSource.setPassword(mysqlSetting.get("password"));
             dataSource.setJdbcUrl(url);
             dataSource.setDriverClass("com.mysql.jdbc.Driver");
-            dataSource.setInitialPoolSize(5);
-            dataSource.setMinPoolSize(5);
-            dataSource.setMaxPoolSize(10);
+            dataSource.setInitialPoolSize(mysqlSetting.getAsInt("pool_size",5));
+            dataSource.setMinPoolSize(mysqlSetting.getAsInt("min_pool_size",5));
+            dataSource.setMaxPoolSize(mysqlSetting.getAsInt("max_pool_size",10));
             dataSource.setMaxStatements(50);
             dataSource.setMaxIdleTime(60);
             return dataSource;
