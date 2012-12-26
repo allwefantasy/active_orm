@@ -25,6 +25,7 @@ import net.csdn.validate.ValidatorLoader;
 
 import javax.persistence.DiscriminatorColumn;
 import java.io.DataInputStream;
+import java.io.File;
 import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -95,7 +96,7 @@ public class JPA {
     //自动同步application.xml文件的配置到persistence.xml
     private static void modifyPersistenceXml(Tuple<Settings, Environment> tuple) throws Exception {
 
-        String fileContent = Streams.copyToStringFromClasspath(classLoader(), "META-INF/persistence.xml");
+        String fileContent = persistenceContent();
         Map<String, Settings> groups = tuple.v1().getGroups(mode() + ".datasources");
         Settings mysqlSetting = groups.get("mysql");
         //
@@ -103,8 +104,31 @@ public class JPA {
         for (Class clzz : models.values()) {
             stringBuffer.append(format("<class>{}</class>", clzz.getName()));
         }
-        String path = classLoader().getResource("META-INF/persistence.xml").getPath();
-        Streams.copy(format(fileContent, mysqlSetting.get("database"), stringBuffer.toString()), new FileWriter(path));
+        String path = classLoader().getResource(".").getPath();
+        File persistDir = new File(path + "");
+        if (!persistDir.exists()) {
+            persistDir.mkdirs();
+        }
+        File persistFile = new File(path + "META-INF/persistence.xml");
+        if (persistFile.exists()) {
+            persistFile.delete();
+        }
+        Streams.copy(format(fileContent, mysqlSetting.get("database"), stringBuffer.toString()), new FileWriter(persistFile));
+    }
+
+    private static String persistenceContent() {
+        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<persistence xmlns=\"http://java.sun.com/xml/ns/persistence\"\n" +
+                "             xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
+                "             xsi:schemaLocation=\"http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd\"\n" +
+                "             version=\"2.0\">\n" +
+                "    <persistence-unit name=\"{}\">\n" +
+                "        {}\n" +
+                "        <properties>\n" +
+                "        </properties>\n" +
+                "    </persistence-unit>\n" +
+                "</persistence>";
+
     }
 
     public static void setJPAConfig(JPAConfig _jpaConfig) {
