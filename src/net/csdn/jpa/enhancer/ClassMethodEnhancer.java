@@ -82,6 +82,9 @@ public class ClassMethodEnhancer implements BitEnhancer {
 // where2
         CtMethod where2 = CtMethod.make("public static net.csdn.jpa.model.JPQL where(String cc,java.util.Map params){return getJPAContext().jpql(\"" + simpleEntityName + "\").where(cc,params);}", ctClass);
         ctClass.addMethod(where2);
+// where3
+        CtMethod where3 = CtMethod.make("public static net.csdn.jpa.model.JPQL where(java.util.Map params){return getJPAContext().jpql(\"" + simpleEntityName + "\").where(params);}", ctClass);
+        ctClass.addMethod(where3);
 
 // select
         CtMethod select = CtMethod.make("public static net.csdn.jpa.model.JPQL select(String cc){return getJPAContext().jpql(\"" + simpleEntityName + "\").select(cc);}", ctClass);

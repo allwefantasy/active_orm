@@ -44,6 +44,10 @@ public class Model extends JPABase {
         throw new AutoGeneration();
     }
 
+    public static JPQL where(Map whereQuery) {
+        throw new AutoGeneration();
+    }
+
 
     public static JPQL select(String cc) {
         throw new AutoGeneration();

@@ -100,6 +100,10 @@ public class Association {
         return where(where, map());
     }
 
+    public JPQL where(Map whereQuery) {
+        return jpql().where(whereQuery);
+    }
+
 
     public JPQL order(String orderBy) {
         return jpql().order(orderBy);
@@ -129,11 +133,21 @@ public class Association {
     }
 
 
-    public void set(JPABase model) {
-        add(model);
+    public boolean set(JPABase model) {
+        return add(model);
     }
 
-    public void add(JPABase model) {
+    public boolean add(Map params) {
+        try {
+            return add((JPABase) ReflectHelper.staticMethod(getTargetModelClass(), "create", params));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+
+    }
+
+    public boolean add(JPABase model) {
         this.targetObject = model;
         try {
             if (type.equals("javax.persistence.OneToMany")) {
@@ -155,10 +169,11 @@ public class Association {
                 targetObject.attr(targetField, Collection.class).add(object);
             }
             //object.save();
-            targetObject.save();
+            return targetObject.save();
 
         } catch (Exception e) {
             e.printStackTrace();
+            return false;
         }
     }
 

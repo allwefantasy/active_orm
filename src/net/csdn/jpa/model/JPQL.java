@@ -1,5 +1,6 @@
 package net.csdn.jpa.model;
 
+import net.csdn.common.collections.WowCollections;
 import net.csdn.common.logging.CSLogger;
 import net.csdn.common.logging.Loggers;
 import net.csdn.common.param.ParamBinding;
@@ -20,6 +21,7 @@ import javax.persistence.metamodel.Metamodel;
 import java.util.*;
 
 import static net.csdn.common.collections.WowCollections.join;
+import static net.csdn.common.collections.WowCollections.list;
 
 public class JPQL {
     private CSLogger logger = Loggers.getLogger(getClass());
@@ -82,6 +84,15 @@ public class JPQL {
 
     public JPQL where(String condition) {
         this.where = (StringUtils.isEmpty(where) ? "where" : where + " and ") + EMPTY_STRING + "(" + parseWhere(condition) + ")";
+        return this;
+    }
+
+    public JPQL where(Map whereQuery) {
+        List con = list();
+        for (Object key : whereQuery.keySet()) {
+            con.add(key + "=:" + key);
+        }
+        where(join(con, " AND "), whereQuery);
         return this;
     }
 
