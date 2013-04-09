@@ -2,8 +2,8 @@ package net.csdn.jpa.enhancer;
 
 import javassist.CtClass;
 import net.csdn.common.settings.Settings;
+import net.csdn.enhancer.ActiveORMEnhancer;
 import net.csdn.enhancer.BitEnhancer;
-import net.csdn.enhancer.Enhancer;
 
 import java.io.DataInputStream;
 import java.util.HashSet;
@@ -17,7 +17,7 @@ import static net.csdn.common.collections.WowCollections.list;
  * Date: 12-6-26
  * Time: 下午10:11
  */
-public class JPAEnhancer extends Enhancer {
+public class JPAEnhancer extends ActiveORMEnhancer {
 
     private Settings settings;
     private List<BitEnhancer> bitEnhancers = list();

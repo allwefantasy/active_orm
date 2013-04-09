@@ -1,11 +1,16 @@
 package net.csdn.jpa.enhancer;
 
 import javassist.CtClass;
+import javassist.CtField;
 import javassist.CtMethod;
+import javassist.CtNewMethod;
 import net.csdn.common.settings.Settings;
 import net.csdn.enhancer.BitEnhancer;
 
+import java.lang.reflect.Modifier;
 import java.util.List;
+
+import static net.csdn.common.collections.WowCollections.list;
 
 /**
  * BlogInfo: WilliamZhu
@@ -22,7 +27,31 @@ public class ClassMethodEnhancer implements BitEnhancer {
     @Override
     public void enhance(List<ModelClass> modelClasses) throws Exception {
         for (ModelClass modelClass : modelClasses) {
+            copyStaticFieldsToSubclass(modelClass.originClass);
+            copyStaticMethodsToSubclass(modelClass.originClass);
             enhanceModelMethods(modelClass.originClass);
+        }
+
+    }
+
+    private void copyStaticMethodsToSubclass(CtClass ctClass) {
+
+        try {
+            CtClass parent = ctClass.getSuperclass();
+            copyStaticMethodsToSubclass(parent, ctClass);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private void copyStaticFieldsToSubclass(CtClass ctClass) {
+
+        try {
+            CtClass parent = ctClass.getSuperclass();
+            copyStaticFieldsToSubclass(parent, ctClass);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
     }
@@ -111,6 +140,31 @@ public class ClassMethodEnhancer implements BitEnhancer {
 
 
         ctClass.defrost();
+
+    }
+
+
+    private void copyStaticMethodsToSubclass(CtClass document, CtClass targetClass) throws Exception {
+        CtMethod[] ctMethods = document.getMethods();
+
+        for (CtMethod ctMethod : ctMethods) {
+            if (Modifier.isStatic(ctMethod.getModifiers()) && list("before_filter", "around_filter").contains(ctMethod.getName())) {
+                CtMethod ctNewMethod = CtNewMethod.copy(ctMethod, targetClass, null);
+                targetClass.addMethod(ctNewMethod);
+            }
+
+        }
+    }
+
+    private void copyStaticFieldsToSubclass(CtClass document, CtClass targetClass) throws Exception {
+        CtField[] ctFields = document.getFields();
+        for (CtField ctField : ctFields) {
+            if (Modifier.isStatic(ctField.getModifiers()) && ctField.getName().startsWith("parent$_")) {
+                CtField ctField1 = new CtField(ctField.getType(), ctField.getName(), targetClass);
+                ctField1.setModifiers(ctField.getModifiers());
+                targetClass.addField(ctField1);
+            }
+        }
 
     }
 }

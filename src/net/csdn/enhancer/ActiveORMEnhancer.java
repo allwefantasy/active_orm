@@ -20,10 +20,10 @@ import java.util.Map;
  * Date: 12-6-26
  * Time: 下午10:08
  */
-public abstract class Enhancer {
+public abstract class ActiveORMEnhancer {
     protected ClassPool classPool;
 
-    public Enhancer() {
+    public ActiveORMEnhancer() {
         this.classPool = JPA.classPool();
     }
 

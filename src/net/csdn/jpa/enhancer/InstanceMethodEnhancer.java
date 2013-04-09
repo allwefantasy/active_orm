@@ -29,7 +29,7 @@ import static net.csdn.common.logging.support.MessageFormat.format;
 public class InstanceMethodEnhancer implements BitEnhancer {
     private Settings settings;
 
-    public InstanceMethodEnhancer(Settings settings) {
+    public  InstanceMethodEnhancer(Settings settings) {
         this.settings = settings;
     }
 

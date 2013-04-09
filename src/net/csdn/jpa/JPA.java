@@ -14,7 +14,7 @@ import net.csdn.common.logging.Loggers;
 import net.csdn.common.scan.DefaultScanService;
 import net.csdn.common.scan.ScanService;
 import net.csdn.common.settings.Settings;
-import net.csdn.enhancer.Enhancer;
+import net.csdn.enhancer.ActiveORMEnhancer;
 import net.csdn.jpa.context.JPAConfig;
 import net.csdn.jpa.enhancer.JPAEnhancer;
 import net.csdn.jpa.model.Model;
@@ -314,7 +314,7 @@ public class JPA {
 
     public static class JPAModelLoader {
         public void load() throws Exception {
-            final Enhancer enhancer = new JPAEnhancer(JPA.settings());
+            final ActiveORMEnhancer enhancer = new JPAEnhancer(JPA.settings());
 
             final List<CtClass> classList = new ArrayList<CtClass>();
             ScanService scanService = new DefaultScanService();

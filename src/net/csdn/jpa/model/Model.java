@@ -9,6 +9,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static net.csdn.common.collections.WowCollections.*;
+
+
 /**
  * BlogInfo: WilliamZhu
  * Date: 12-6-26
@@ -24,6 +27,40 @@ public class Model extends JPABase {
     public static MysqlClient nativeSqlClient() {
         //TODO:竟然在这里使用了  ServiceFramwork.injector 疯掉了....  去掉，去掉....
         return mysqlClient.defaultMysqlService();
+    }
+
+    //field validate
+
+    public static void validate(String fieldName, Map validateInfo) {
+        throw new AutoGeneration();
+    }
+
+
+    //filter
+    private static Map parent$_before_filter_info;
+
+    public static void before_filter(String filterMethod, List<String> methods) {
+        if (isNull(parent$_before_filter_info)) {
+            parent$_before_filter_info = map();
+        }
+        parent$_before_filter_info.put(filterMethod, methods);
+    }
+
+    public static void before_filter(String filterMethod, String... methods) {
+        before_filter(filterMethod, list(methods));
+    }
+
+    private static Map parent$_around_filter_info;
+
+    public static void around_filter(String filterMethod, List<String> methods) {
+        if (isNull(parent$_around_filter_info)) {
+            parent$_around_filter_info = map();
+        }
+        parent$_around_filter_info.put(filterMethod, methods);
+    }
+
+    public static void around_filter(String filterMethod, String... methods) {
+        around_filter(filterMethod, methods);
     }
 
     //----------------------------------------------------------------------------------
