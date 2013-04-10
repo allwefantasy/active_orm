@@ -14,4 +14,5 @@ public interface ValidateParse {
     interface ValidateIterator {
         public void iterate(String targetFieldName, Field field, Object info) throws Exception;
     }
+
 }

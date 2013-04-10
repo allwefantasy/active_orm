@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import static net.csdn.common.logging.support.MessageFormat.format;
+import static net.csdn.common.reflect.ReflectHelper.staticMethod;
 
 /**
  * BlogInfo: WilliamZhu
@@ -18,6 +19,7 @@ import static net.csdn.common.logging.support.MessageFormat.format;
  * Time: 下午7:18
  */
 public abstract class BaseValidateParse implements ValidateParse {
+
     protected List<Field> getValidateFields(Class clzz) {
         List<Field> validateFields = new ArrayList<Field>();
         Field[] fields = clzz.getDeclaredFields();
@@ -31,6 +33,7 @@ public abstract class BaseValidateParse implements ValidateParse {
 
         return validateFields;
     }
+
 
     protected ValidateResult validateResult(String msg, String targetFieldName) {
         return new ValidateResult(format(msg, targetFieldName), targetFieldName);
@@ -64,10 +67,31 @@ public abstract class BaseValidateParse implements ValidateParse {
                 Object wow = info.get(target);
                 validateIterator.iterate(field.getName().substring(1), field, wow);
             }
+            iterateValidateInfo2(clzz, target, validateIterator);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
+    protected void iterateValidateInfo2(Class clzz, String target, ValidateIterator validateIterator) {
+        try {
+
+            Map<String, Map> validateInfo = (Map) staticMethod(clzz, "validate_info");
+
+            if (validateInfo == null) return;
+            for (Map.Entry<String, Map> entry : validateInfo.entrySet()) {
+                try {
+                    if (!entry.getValue().containsKey(target)) continue;
+                    validateIterator.iterate(entry.getKey(), null, entry.getValue().get(target));
+                } catch (NoSuchFieldException e) {
+                    e.printStackTrace();
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 
     protected List<Field> getModelFields(Class clzz) {
         List<Field> modelFields = new ArrayList<Field>();

@@ -17,7 +17,7 @@ import static net.csdn.common.collections.WowCollections.*;
  * Date: 12-6-26
  * Time: 下午9:53
  */
-public class Model extends JPABase {
+public class  Model extends JPABase {
 
     public static List<Map> findBySql(String sql, Object... params) {
         //TODO:竟然在这里使用了  ServiceFramwork.injector 疯掉了....  去掉，去掉....
@@ -31,36 +31,17 @@ public class Model extends JPABase {
 
     //field validate
 
-    public static void validate(String fieldName, Map validateInfo) {
-        throw new AutoGeneration();
-    }
+    protected static Map parent$_validate_info;
 
-
-    //filter
-    private static Map parent$_before_filter_info;
-
-    public static void before_filter(String filterMethod, List<String> methods) {
-        if (isNull(parent$_before_filter_info)) {
-            parent$_before_filter_info = map();
+    protected static void validate(String fieldName, Map validate) {
+        if (parent$_validate_info == null) {
+            parent$_validate_info = map();
         }
-        parent$_before_filter_info.put(filterMethod, methods);
+        parent$_validate_info = map(fieldName, validate);
     }
 
-    public static void before_filter(String filterMethod, String... methods) {
-        before_filter(filterMethod, list(methods));
-    }
-
-    private static Map parent$_around_filter_info;
-
-    public static void around_filter(String filterMethod, List<String> methods) {
-        if (isNull(parent$_around_filter_info)) {
-            parent$_around_filter_info = map();
-        }
-        parent$_around_filter_info.put(filterMethod, methods);
-    }
-
-    public static void around_filter(String filterMethod, String... methods) {
-        around_filter(filterMethod, methods);
+    protected static Map validate_info() {
+        return parent$_validate_info;
     }
 
     //----------------------------------------------------------------------------------
