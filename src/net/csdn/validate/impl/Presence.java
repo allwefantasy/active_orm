@@ -13,7 +13,7 @@ import java.util.Map;
 import static net.csdn.validate.ValidateHelper.presence;
 
 /**
- * BlogInfo: WilliamZhu
+ * User: WilliamZhu
  * Date: 12-7-3
  * Time: 下午6:22
  */

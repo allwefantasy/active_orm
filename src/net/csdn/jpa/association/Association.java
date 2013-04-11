@@ -89,7 +89,7 @@ public class Association {
     }
 
     private JPQL jpql() {
-        return (JPQL) ReflectHelper.method(getTargetModelClass(), "where", targetField + "=:framework_service_holder", map("framework_service_holder", object));
+        return (JPQL) ReflectHelper.staticMethod(getTargetModelClass(), "where", targetField + "=:framework_service_holder", map("framework_service_holder", object));
     }
 
     public JPQL where(String where, Map<String, Object> params) {

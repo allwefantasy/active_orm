@@ -3,7 +3,6 @@ package net.csdn.validate;
 import net.csdn.annotation.validate.Validate;
 import net.csdn.common.reflect.ReflectHelper;
 
-import javax.persistence.Transient;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -47,6 +46,7 @@ public abstract class BaseValidateParse implements ValidateParse {
     protected Field getModelField(Class clzz, String name) {
         try {
             Field field = ReflectHelper.findField(clzz, name);
+            if (field == null) return null;
             field.setAccessible(true);
             return field;
         } catch (Exception e) {
@@ -92,15 +92,4 @@ public abstract class BaseValidateParse implements ValidateParse {
         }
     }
 
-
-    protected List<Field> getModelFields(Class clzz) {
-        List<Field> modelFields = new ArrayList<Field>();
-        Field[] fields = clzz.getFields();
-        for (Field field : fields) {
-            if (Modifier.isStatic(field.getModifiers()) || Modifier.isPrivate(field.getModifiers())) continue;
-            if (field.getAnnotation(Transient.class) != null) continue;
-            modelFields.add(field);
-        }
-        return modelFields;
-    }
 }

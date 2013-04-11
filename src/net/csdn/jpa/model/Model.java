@@ -9,7 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static net.csdn.common.collections.WowCollections.*;
+import static net.csdn.common.collections.WowCollections.map;
 
 
 /**
@@ -17,7 +17,7 @@ import static net.csdn.common.collections.WowCollections.*;
  * Date: 12-6-26
  * Time: 下午9:53
  */
-public class  Model extends JPABase {
+public class Model extends JPABase {
 
     public static List<Map> findBySql(String sql, Object... params) {
         //TODO:竟然在这里使用了  ServiceFramwork.injector 疯掉了....  去掉，去掉....
@@ -33,14 +33,14 @@ public class  Model extends JPABase {
 
     protected static Map parent$_validate_info;
 
-    protected static void validate(String fieldName, Map validate) {
+    public static void validate(String fieldName, Map validate) {
         if (parent$_validate_info == null) {
             parent$_validate_info = map();
         }
-        parent$_validate_info = map(fieldName, validate);
+        parent$_validate_info.put(fieldName, validate);
     }
 
-    protected static Map validate_info() {
+    public static Map validate_info() {
         return parent$_validate_info;
     }
 

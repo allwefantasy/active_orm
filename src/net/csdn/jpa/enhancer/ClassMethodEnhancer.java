@@ -24,6 +24,11 @@ public class ClassMethodEnhancer implements BitEnhancer {
         this.settings = settings;
     }
 
+    private List<String> shouldCopyToSubclassStaticMethods = list(
+            "validate_info",
+            "validate"
+    );
+
     @Override
     public void enhance(List<ModelClass> modelClasses) throws Exception {
         for (ModelClass modelClass : modelClasses) {
@@ -38,6 +43,10 @@ public class ClassMethodEnhancer implements BitEnhancer {
 
         try {
             CtClass parent = ctClass.getSuperclass();
+            while (!parent.getName().equals("net.csdn.jpa.model.Model")) {
+                if (parent.getName().equals("java.lang.Object")) break;
+                parent = parent.getSuperclass();
+            }
             copyStaticMethodsToSubclass(parent, ctClass);
         } catch (Exception e) {
             e.printStackTrace();
@@ -49,6 +58,10 @@ public class ClassMethodEnhancer implements BitEnhancer {
 
         try {
             CtClass parent = ctClass.getSuperclass();
+            while (!parent.getName().equals("net.csdn.jpa.model.Model")) {
+                if (parent.getName().equals("java.lang.Object")) break;
+                parent = parent.getSuperclass();
+            }
             copyStaticFieldsToSubclass(parent, ctClass);
         } catch (Exception e) {
             e.printStackTrace();
@@ -148,7 +161,7 @@ public class ClassMethodEnhancer implements BitEnhancer {
         CtMethod[] ctMethods = document.getMethods();
 
         for (CtMethod ctMethod : ctMethods) {
-            if (Modifier.isStatic(ctMethod.getModifiers()) && list("before_filter", "around_filter").contains(ctMethod.getName())) {
+            if (Modifier.isStatic(ctMethod.getModifiers()) && shouldCopyToSubclassStaticMethods.contains(ctMethod.getName())) {
                 CtMethod ctNewMethod = CtNewMethod.copy(ctMethod, targetClass, null);
                 targetClass.addMethod(ctNewMethod);
             }
