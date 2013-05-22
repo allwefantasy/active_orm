@@ -171,10 +171,6 @@ public class Model extends JPABase {
         throw new AutoGeneration();
     }
 
-    public static void transaction() {
-
-    }
-
     public static class JPAQuery {
 
         public Query query;
