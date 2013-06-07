@@ -20,13 +20,15 @@ import static net.csdn.common.collections.WowCollections.map;
 public class Model extends JPABase {
 
     public static List<Map> findBySql(String sql, Object... params) {
-        //TODO:竟然在这里使用了  ServiceFramwork.injector 疯掉了....  去掉，去掉....
         return mysqlClient.query(sql, params);
     }
 
     public static MysqlClient nativeSqlClient() {
-        //TODO:竟然在这里使用了  ServiceFramwork.injector 疯掉了....  去掉，去掉....
         return mysqlClient.defaultMysqlService();
+    }
+
+    public static MysqlClient nativeSqlClient(String dbName) {
+        return mysqlClient.mysqlService(dbName);
     }
 
     //field validate

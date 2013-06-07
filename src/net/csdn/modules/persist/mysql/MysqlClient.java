@@ -26,12 +26,28 @@ public class MysqlClient {
     private Settings settings;
 
 
+    public MysqlClient settings(Settings settings) {
+        this.settings = settings;
+        return this;
+    }
+
     public MysqlClient(DataSourceManager _dataSourceManager, Settings _settings) {
         this.settings = _settings;
         for (Map.Entry<String, DataSource> entry : _dataSourceManager.dataSourceMap().entrySet()) {
             mysqlManagers.put(entry.getKey(), new MysqlClient(_dataSourceManager, settings, entry.getValue()));
         }
 
+    }
+
+    public MysqlClient(DataSourceManager _dataSourceManager) {
+        for (Map.Entry<String, DataSource> entry : _dataSourceManager.dataSourceMap().entrySet()) {
+            mysqlManagers.put(entry.getKey(), new MysqlClient(_dataSourceManager, null, entry.getValue()));
+        }
+
+    }
+
+    public MysqlClient(DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     private MysqlClient(DataSourceManager dataSourceManager, Settings settings, DataSource _dataSource) {
@@ -56,36 +72,18 @@ public class MysqlClient {
         return dataSource.getConnection();
     }
 
-    public void execute(String sql) {
-        Connection conn = null;
-        PreparedStatement preparedStatement = null;
-        try {
-            conn = getConnection();
-            preparedStatement = conn.prepareStatement(sql);
-            preparedStatement.execute();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (preparedStatement != null) preparedStatement.close();
-                if (conn != null) conn.close();
-            } catch (SQLException e) {
-                //ignore
-            }
-
-        }
-
-    }
 
     public void execute(String sql, Object... params) {
         Connection conn = null;
         PreparedStatement preparedStatement = null;
         try {
             conn = getConnection();
-            preparedStatement = conn.prepareStatement(sql);
-            setParams(preparedStatement, params);
+            preparedStatement = preparedStatement(conn, sql, false);
+            if (params.length > 0) {
+                setParams(preparedStatement, params);
+            }
             preparedStatement.execute();
-        } catch (SQLException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         } finally {
             try {
@@ -99,7 +97,44 @@ public class MysqlClient {
 
     }
 
-    public <T> Set<T> projection_query_as_set(String sql, final String columnName, Object... objs) {
+    private PreparedStatement preparedStatement(Connection conn, String sql, boolean streaming) throws Exception {
+        if (streaming) {
+            PreparedStatement preparedStatement = conn.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+            preparedStatement.setFetchSize(1000);
+        }
+        return conn.prepareStatement(sql);
+    }
+
+    /*
+      遍历表使用
+     */
+    public void executeStreaming(String sql, Object... params) {
+        Connection conn = null;
+        PreparedStatement preparedStatement = null;
+        try {
+            conn = getConnection();
+            preparedStatement = preparedStatement(conn, sql, true);
+            if (params.length > 0) {
+                setParams(preparedStatement, params);
+            }
+
+            preparedStatement.execute();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (preparedStatement != null) preparedStatement.close();
+                if (conn != null) conn.close();
+            } catch (SQLException e) {
+                //ignore
+            }
+
+        }
+
+    }
+
+
+    public <T> Set<T> projectionByColumn(String sql, final String columnName, Object... objs) {
         return (Set<T>) defaultMysqlService().executeQuery(sql, new SqlCallback() {
             @Override
             public Object execute(ResultSet rs) {
@@ -117,7 +152,7 @@ public class MysqlClient {
         }, objs);
     }
 
-    public <T> List<T> projection_query(String sql, final String columnName, Object... objs) {
+    public <T> List<T> projectionByColumn2(String sql, final String columnName, Object... objs) {
         return (List<T>) defaultMysqlService().executeQuery(sql, new SqlCallback() {
             @Override
             public Object execute(ResultSet rs) {
@@ -137,6 +172,15 @@ public class MysqlClient {
 
     public List<Map> query(String sql, Object... objs) {
         return (List<Map>) defaultMysqlService().executeQuery(sql, new SqlCallback() {
+            @Override
+            public Object execute(ResultSet rs) {
+                return MysqlClient.rsToMaps(rs);
+            }
+        }, objs);
+    }
+
+    public List<Map> streamingQuery(String sql, Object... objs) {
+        return (List<Map>) defaultMysqlService().executeStreamingQuery(sql, new SqlCallback() {
             @Override
             public Object execute(ResultSet rs) {
                 return MysqlClient.rsToMaps(rs);
@@ -224,11 +268,12 @@ public class MysqlClient {
         long time1 = System.currentTimeMillis();
         try {
             conn = getConnection();
-            preparedStatement = conn.prepareStatement(sql);
-            setParams(preparedStatement, params);
+            preparedStatement = preparedStatement(conn, sql, false);
+            if (params.length > 0)
+                setParams(preparedStatement, params);
             resultSet = preparedStatement.executeQuery();
             return callback.execute(resultSet);
-        } catch (SQLException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         } finally {
             try {
@@ -240,25 +285,27 @@ public class MysqlClient {
             }
             long time2 = System.currentTimeMillis();
             if (this.settings.getAsBoolean("enable_sql_log", false)) {
-                logger.info(" Load (" + (time2 - time1) + "ms)");
-                logger.info(sql + "  [" + join(params, ",") + "]");
+                logger.info(" Load (" + (time2 - time1) + "ms) " + sql + "  [" + join(params, ",") + "]");
             }
 
         }
         return null;
     }
 
-    public <T> T executeQuery(String sql, SqlCallback<T> callback) {
+
+    public <T> T executeStreamingQuery(String sql, SqlCallback<T> callback, Object... params) {
         Connection conn = null;
         PreparedStatement preparedStatement = null;
         ResultSet resultSet = null;
         long time1 = System.currentTimeMillis();
         try {
             conn = getConnection();
-            preparedStatement = conn.prepareStatement(sql);
+            preparedStatement = preparedStatement(conn, sql, true);
+            if (params.length > 0)
+                setParams(preparedStatement, params);
             resultSet = preparedStatement.executeQuery();
             return callback.execute(resultSet);
-        } catch (SQLException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         } finally {
             try {
@@ -270,13 +317,13 @@ public class MysqlClient {
             }
             long time2 = System.currentTimeMillis();
             if (this.settings.getAsBoolean("enable_sql_log", false)) {
-                logger.info(" Load (" + (time2 - time1) + "ms)");
-                logger.info(sql);
+                logger.info(" Load (" + (time2 - time1) + "ms) " + sql + "  [" + join(params, ",") + "]");
             }
 
         }
         return null;
     }
+
 
     public static Map rsToMapSingle(ResultSet rs, String[] keys) throws SQLException {
         try {
