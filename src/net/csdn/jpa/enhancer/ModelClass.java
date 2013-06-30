@@ -1,15 +1,21 @@
 package net.csdn.jpa.enhancer;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import javassist.CtClass;
 import javassist.CtField;
+import javassist.Modifier;
+import javassist.NotFoundException;
 import net.csdn.annotation.association.NotMapping;
+import net.csdn.common.Strings;
 
+import javax.persistence.Inheritance;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import java.lang.reflect.Method;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 import static net.csdn.common.collections.WowCollections.list;
 
@@ -19,53 +25,145 @@ import static net.csdn.common.collections.WowCollections.list;
  * Time: 下午8:51
  */
 public class ModelClass {
-    public final static Set<ModelClass> fatherModelClass = new HashSet<ModelClass>();
-    public final static Set<ModelClass> modelClasses = new HashSet<ModelClass>();
+
+
+    public static final String MODEL_CLASS_NAME = "net.csdn.jpa.model.Model";
+    public static final Map<CtClass, ModelClass> CTModelClasses = Maps.newHashMap();
     public CtClass originClass;
-    public Set<ModelClass> children;
     private List<String> skipFields = list();
+    private List<ModelClass> children = Lists.newArrayList();
+    private ModelClass parent = null;
 
+    public static List<ModelClass> ROOTS = Lists.newArrayList();
 
-    public ModelClass(CtClass originClass, Set<ModelClass> children) {
+    public ModelClass(CtClass originClass) {
         this.originClass = originClass;
-        this.children = children;
         notMapping(originClass, skipFields);
     }
 
-    public static ModelClass findModelClass(CtClass ct) {
-        for (ModelClass modelClass : modelClasses) {
-            if (ct == modelClass.originClass) {
-                return modelClass;
-            }
-        }
-        return null;
+    public static ModelClass findModelClass(CtClass ctClass) {
+        return CTModelClasses.get(ctClass);
     }
 
-    public boolean isInheritance() {
-        List<ModelClass> modelClasses = list();
-        for (ModelClass modelClass : fatherModelClass) {
-            modelClasses.addAll(modelClass.children);
-        }
-        if (modelClasses.contains(this)) {
-            return true;
-        }
-        return false;
-    }
-
-    public List<String> notMappingColumns() {
-        notMapping(originClass, skipFields);
-        for (ModelClass modelClass : children) {
-            notMapping(modelClass.originClass, skipFields);
-        }
+    public List<String> notMappings() {
         return skipFields;
     }
+
+    public ModelClass addChild(ModelClass temp) {
+        children.add(temp);
+        return this;
+    }
+
+    public ModelClass parent(ModelClass temp) {
+        this.parent = temp;
+        return this;
+    }
+
+    public boolean isLeafNode() {
+        return children.size() == 0;
+    }
+
+    public List<ModelClass> findLeafNodes() {
+        List<ModelClass> result = new ArrayList();
+        innerFindLeaf(this, result);
+        return result;
+    }
+
+    private void innerFindLeaf(ModelClass modelClass, List<ModelClass> result) {
+        for (ModelClass temp : modelClass.children) {
+            if (temp.isLeafNode()) {
+                result.add(temp);
+            } else {
+                innerFindLeaf(temp, result);
+            }
+        }
+    }
+
+    public List<ModelClass> children() {
+        return children;
+    }
+
+    public static List<CtField> fields(CtClass tOriginClass, FieldFilter fieldFilter) {
+        List<CtField> ctFields = Lists.newArrayList();
+        for (CtField field : tOriginClass.getDeclaredFields()) {
+            if (fieldFilter.filter(field)) {
+                ctFields.add(field);
+            }
+        }
+        int count = 0;
+        CtClass ctClass;
+        try {
+            while (!(ctClass = tOriginClass.getSuperclass()).getClass().getName().equals(MODEL_CLASS_NAME)) {
+                for (CtField field : ctClass.getDeclaredFields()) {
+                    if (fieldFilter.filter(field)) {
+                        ctFields.add(field);
+                    }
+                }
+                //make sure no dead loop
+                count++;
+                if (count > 5) {
+                    break;
+                }
+            }
+        } catch (NotFoundException e) {
+            e.printStackTrace();
+        }
+        return ctFields;
+    }
+
+    public interface FieldFilter {
+        public boolean filter(CtField field);
+    }
+
+    public static boolean isInheritance(CtClass ct) {
+        try {
+            return ct.hasAnnotation(Inheritance.class) || Modifier.isAbstract(ct.getModifiers()) || !ct.getSuperclass().getClass().getName().equals(MODEL_CLASS_NAME);
+        } catch (NotFoundException e) {
+            return false;
+        }
+    }
+
+    public static boolean isLeafClass(List<ModelClass> classes, CtClass ct) {
+        if (isInheritance(ct)) return false;
+        for (ModelClass modelClass : classes) {
+            try {
+                if (modelClass.originClass.subtypeOf(ct)) {
+                    return false;
+                }
+            } catch (NotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+        return true;
+    }
+
+    public static void iterateSuperClass(CtClass ctClass, SuperClassIterator superClassIterator) {
+        try {
+            CtClass temp;
+            int count = 0;
+            while (!(temp = ctClass.getSuperclass()).getClass().getName().equals(MODEL_CLASS_NAME)) {
+                superClassIterator.iterate(temp);
+                count++;
+                if (count > 5) {
+                    break;
+                }
+            }
+        } catch (NotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public interface SuperClassIterator {
+        public void iterate(CtClass ctClass);
+    }
+
 
     private void notMapping(CtClass ctClass, List<String> skipFields) {
         if (ctClass.hasAnnotation(NotMapping.class)) {
             try {
                 NotMapping notMapping = (NotMapping) ctClass.getAnnotation(NotMapping.class);
                 for (String str : notMapping.value()) {
-                    skipFields.add(str);
+                    skipFields.add(Strings.toUnderscoreCase(str));
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -75,27 +173,37 @@ public class ModelClass {
     }
 
     //自动过滤掉
-    private void autoNotMapping(CtClass ctClass, List<String> skipFields) {
-        CtField[] fields = ctClass.getDeclaredFields();
-        for (CtField ctField : fields) {
-            guessNotMappingName(ctField, ManyToOne.class, skipFields);
-            guessNotMappingName(ctField, OneToOne.class, skipFields);
-        }
+    private void autoNotMapping(CtClass ctClass, final List<String> skipFields) {
+
+        fields(ctClass, new FieldFilter() {
+            @Override
+            public boolean filter(CtField field) {
+                guessNotMappingName(field, ManyToOne.class, skipFields);
+                guessNotMappingName(field, OneToOne.class, skipFields);
+                return false;
+            }
+        });
     }
 
     private void guessNotMappingName(CtField ctField, Class clzz, List<String> skipFields) {
         if (ctField.hasAnnotation(clzz)) {
             Method mappedBy = null;
+            String tablePrefix = Strings.toUnderscoreCase(ctField.getName());
             try {
                 Object wow = ctField.getAnnotation(clzz);
                 mappedBy = wow.getClass().getMethod("mappedBy");
                 String value = (String) mappedBy.invoke(wow);
                 if (value == null || value.isEmpty()) {
-                    skipFields.add(ctField.getName() + "_id");
+                    skipFields.add(tablePrefix + "_id");
+                    skipFields.add(Strings.toCamelCase(tablePrefix + "_id", false));
+                } else {
+                    skipFields.add(Strings.toUnderscoreCase(value));
+                    skipFields.add(Strings.toCamelCase(value));
                 }
             } catch (Exception e) {
                 if (mappedBy == null) {
                     skipFields.add(ctField.getName() + "_id");
+                    skipFields.add(Strings.toCamelCase(ctField.getName() + "_id", false));
                 }
             }
         }

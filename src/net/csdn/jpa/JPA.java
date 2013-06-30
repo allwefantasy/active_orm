@@ -17,13 +17,13 @@ import net.csdn.common.settings.Settings;
 import net.csdn.enhancer.ActiveORMEnhancer;
 import net.csdn.jpa.context.JPAConfig;
 import net.csdn.jpa.enhancer.JPAEnhancer;
+import net.csdn.jpa.enhancer.ModelClass;
 import net.csdn.jpa.model.Model;
 import net.csdn.jpa.type.DBInfo;
 import net.csdn.jpa.type.DBType;
 import net.csdn.jpa.type.impl.MysqlType;
 import net.csdn.validate.ValidatorLoader;
 
-import javax.persistence.DiscriminatorColumn;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileWriter;
@@ -105,11 +105,11 @@ public class JPA {
             stringBuffer.append(format("<class>{}</class>", clzz.getName()));
         }
         String path = classLoader().getResource(".").getPath();
-        File persistDir = new File(path + "");
+        File persistDir = new File(path + "META-INF/");
         if (!persistDir.exists()) {
             persistDir.mkdirs();
         }
-        File persistFile = new File(path + "META-INF/persistence.xml");
+        File persistFile = new File(persistDir.getPath() + "/persistence.xml");
         if (persistFile.exists()) {
             persistFile.delete();
         }
@@ -323,7 +323,10 @@ public class JPA {
                 @Override
                 public Class loaded(DataInputStream classFile) {
                     try {
-                        classList.add(enhancer.enhanceThisClass(classFile));
+                        CtClass clzz = enhancer.enhanceThisClass(classFile);
+                        if (clzz != null) {
+                            classList.add(clzz);
+                        }
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -331,18 +334,19 @@ public class JPA {
                 }
             });
 
-            enhancer.enhanceThisClass2(classList);
-
-
-            for (CtClass ctClass : classList) {
-                if (ctClass.hasAnnotation(DiscriminatorColumn.class)) {
-                    loadClass(ctClass);
-                }
+            List<ModelClass> roots = enhancer.enhanceThisClass2(classList);
+            for (ModelClass modelClass : roots) {
+                loadClass(modelClass);
             }
+        }
 
-            for (CtClass ctClass : classList) {
-                if (!ctClass.hasAnnotation(DiscriminatorColumn.class)) {
-                    loadClass(ctClass);
+        private void loadClass(ModelClass modelClass) {
+            loadClass(modelClass.originClass);
+            for (ModelClass temp : modelClass.children()) {
+                if (temp.isLeafNode()) {
+                    loadClass(temp.originClass);
+                } else {
+                    loadClass(temp);
                 }
             }
         }

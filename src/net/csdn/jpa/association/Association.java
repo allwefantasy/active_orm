@@ -1,5 +1,6 @@
 package net.csdn.jpa.association;
 
+import net.csdn.common.Strings;
 import net.csdn.common.reflect.ReflectHelper;
 import net.csdn.jpa.JPA;
 import net.csdn.jpa.model.JPABase;
@@ -122,7 +123,7 @@ public class Association {
             try {
                 EntityManager entityManager = JPA.getJPAConfig().getJPAContext().em();
                 if (type.equals("javax.persistence.ManyToMany")) {
-                    String idFiled1 = field + "_id";
+                    String idFiled1 = Strings.toUnderscoreCase(field + "_id");
                     entityManager.createNativeQuery(format("delete from " + tableName + " where  {}={}", idFiled1, object.id())).executeUpdate();
                 }
             } catch (Exception e) {

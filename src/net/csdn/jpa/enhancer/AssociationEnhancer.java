@@ -1,7 +1,6 @@
 package net.csdn.jpa.enhancer;
 
 import javassist.CtClass;
-import javassist.CtField;
 import javassist.CtMethod;
 import javassist.bytecode.AnnotationsAttribute;
 import net.csdn.annotation.callback.*;
@@ -26,10 +25,10 @@ import static net.csdn.common.logging.support.MessageFormat.format;
  * Date: 12-7-4
  * Time: 下午9:08
  */
-public class InstanceMethodEnhancer implements BitEnhancer {
+public class AssociationEnhancer implements BitEnhancer {
     private Settings settings;
 
-    public  InstanceMethodEnhancer(Settings settings) {
+    public AssociationEnhancer(Settings settings) {
         this.settings = settings;
     }
 
@@ -49,7 +48,6 @@ public class InstanceMethodEnhancer implements BitEnhancer {
     public void inner_enhance(ModelClass modelClass) throws Exception {
 
         CtClass ctClass = modelClass.originClass;
-        CtField[] fields = ctClass.getDeclaredFields();
         enhanceJPACallback(ctClass);
 
         OneToOneEnhancer oneToOneEnhancer = new OneToOneEnhancer(modelClass);

@@ -1,5 +1,9 @@
 package net.csdn.jpa.model;
 
+import javax.persistence.Access;
+import javax.persistence.AccessType;
+import javax.persistence.MappedSuperclass;
+
 /**
  * BlogInfo: WilliamZhu
  * Date: 12-6-26

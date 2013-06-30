@@ -97,7 +97,7 @@ public class MysqlClient {
 
     }
 
-    private PreparedStatement preparedStatement(Connection conn, String sql, boolean streaming) throws Exception {
+      private PreparedStatement preparedStatement(Connection conn, String sql, boolean streaming) throws Exception {
         if (streaming) {
             PreparedStatement preparedStatement = conn.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
             preparedStatement.setFetchSize(1000);

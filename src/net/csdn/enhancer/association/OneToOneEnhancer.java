@@ -3,14 +3,18 @@ package net.csdn.enhancer.association;
 import javassist.CtClass;
 import javassist.CtField;
 import javassist.CtMethod;
+import javassist.bytecode.annotation.StringMemberValue;
+import net.csdn.common.Strings;
 import net.csdn.common.enhancer.EnhancerHelper;
 import net.csdn.enhancer.AssociatedHelper;
 import net.csdn.jpa.JPA;
 import net.csdn.jpa.enhancer.ModelClass;
 import net.csdn.jpa.type.DBInfo;
 
+import javax.persistence.JoinColumn;
 import java.util.Map;
 
+import static net.csdn.common.collections.WowCollections.map;
 import static net.csdn.common.logging.support.MessageFormat.format;
 
 /**
@@ -35,12 +39,13 @@ public class OneToOneEnhancer {
                 Map<String, String> columns = dbInfo.tableColumns.get(ctClass.getSimpleName());
                 String clzzName = AssociatedHelper.findAssociatedClassName(ctField);
                 CtField mappedByField = AssociatedHelper.findAssociatedField(modelClass, clzzName);
-                if (!columns.containsKey(ctField.getName() + "_id")) {
+                if (!columns.containsKey(Strings.toUnderscoreCase(ctField.getName()) + "_id")) {
                     AssociatedHelper.setMappedBy(ctField, mappedByField.getName(), "OneToOne");
-
                 } else {
-                    AssociatedHelper.setMappedBy(mappedByField, mappedByField.getName(), "OneToOne");
-
+                    AssociatedHelper.setMappedBy(mappedByField, ctField.getName(), "OneToOne");
+                    EnhancerHelper.createAnnotation(ctField, JoinColumn.class, map(
+                            "name", new StringMemberValue(Strings.toUnderscoreCase(ctField.getName() + "_id"), ctField.getFieldInfo2().getConstPool())
+                    ));
                 }
                 AssociatedHelper.setCascadeWithDefault(mappedByField, "OneToOne");
                 AssociatedHelper.setCascadeWithDefault(ctField, "OneToOne");

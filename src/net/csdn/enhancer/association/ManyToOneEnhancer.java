@@ -3,9 +3,14 @@ package net.csdn.enhancer.association;
 import javassist.CtClass;
 import javassist.CtField;
 import javassist.CtMethod;
+import javassist.bytecode.annotation.StringMemberValue;
+import net.csdn.common.Strings;
 import net.csdn.common.enhancer.EnhancerHelper;
 import net.csdn.jpa.enhancer.ModelClass;
 
+import javax.persistence.JoinColumn;
+
+import static net.csdn.common.collections.WowCollections.map;
 import static net.csdn.common.logging.support.MessageFormat.format;
 import static net.csdn.enhancer.AssociatedHelper.*;
 
@@ -34,10 +39,14 @@ public class ManyToOneEnhancer {
 
                 String mappedByFieldName = findAssociatedFieldName(modelClass, clzzName);
                 String mappedByClassName = ctClass.getName();
+                EnhancerHelper.createAnnotation(ctField, JoinColumn.class, map(
+                        "name", new StringMemberValue(Strings.toUnderscoreCase(ctField.getName() + "_id"), ctField.getFieldInfo2().getConstPool())
+                ));
+
+                if (mappedByFieldName == null) return;
 
                 //默认设置为cascade = CascadeType.PERSIST
                 setCascadeWithDefault(ctField, "ManyToOne");
-
 
                 findAndRemoveMethod(ctClass, ctField, mappedByClassName);
                 findAndRemoveMethod(ctClass, ctField.getName());

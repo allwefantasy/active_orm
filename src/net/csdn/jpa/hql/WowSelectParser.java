@@ -30,7 +30,7 @@ public class WowSelectParser {
     }
 
     public String toHql() {
-        return join(selectConditions);
+        return "select " + join(selectConditions);
     }
     //private String
 

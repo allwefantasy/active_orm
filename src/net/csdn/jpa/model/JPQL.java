@@ -1,6 +1,5 @@
 package net.csdn.jpa.model;
 
-import net.csdn.common.collections.WowCollections;
 import net.csdn.common.logging.CSLogger;
 import net.csdn.common.logging.Loggers;
 import net.csdn.common.param.ParamBinding;
@@ -20,8 +19,7 @@ import javax.persistence.metamodel.EntityType;
 import javax.persistence.metamodel.Metamodel;
 import java.util.*;
 
-import static net.csdn.common.collections.WowCollections.join;
-import static net.csdn.common.collections.WowCollections.list;
+import static net.csdn.common.collections.WowCollections.*;
 
 public class JPQL {
     private CSLogger logger = Loggers.getLogger(getClass());
@@ -81,6 +79,7 @@ public class JPQL {
         this.bindings.putAll(params);
         return this;
     }
+
 
     public JPQL where(String condition) {
         this.where = (StringUtils.isEmpty(where) ? "where" : where + " and ") + EMPTY_STRING + "(" + parseWhere(condition) + ")";
@@ -155,7 +154,6 @@ public class JPQL {
             EntityType entityType = (EntityType) entities.next();
 
             if (entity.equals(entityType.getName())) {
-                Map<String, Object> declaredAttributes = null;
                 try {
                     Set<AbstractAttribute> attributes = entityType.getAttributes();
                     for (AbstractAttribute attribute : attributes) {
@@ -171,6 +169,10 @@ public class JPQL {
     }
 
     public JPQL select(String select) {
+        if (isEmpty(select)) {
+            this.select = "";
+            return this;
+        }
         this.select = parseSelect(select);
         return this;
     }
@@ -185,6 +187,10 @@ public class JPQL {
     }
 
     public JPQL order(String order) {
+        if (isEmpty(order)) {
+            this.order = "";
+            return this;
+        }
         this.order = "order by " + EMPTY_STRING + defaultName + "." + parse(order);
         return this;
     }
@@ -229,6 +235,10 @@ public class JPQL {
         if (list.size() == 0) return null;
         return (T) list.get(0);
 
+    }
+
+    public <T> T singleFetch() {
+        return single_fetch();
     }
 
     public List fetch() {

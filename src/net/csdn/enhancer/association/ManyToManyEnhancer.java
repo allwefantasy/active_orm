@@ -3,12 +3,21 @@ package net.csdn.enhancer.association;
 import javassist.CtClass;
 import javassist.CtField;
 import javassist.CtMethod;
+import javassist.bytecode.AnnotationsAttribute;
+import javassist.bytecode.AttributeInfo;
+import javassist.bytecode.ConstPool;
+import javassist.bytecode.annotation.AnnotationMemberValue;
+import javassist.bytecode.annotation.ArrayMemberValue;
+import javassist.bytecode.annotation.StringMemberValue;
 import net.csdn.annotation.association.ManyToManyHint;
 import net.csdn.common.Strings;
 import net.csdn.common.enhancer.EnhancerHelper;
 import net.csdn.jpa.JPA;
 import net.csdn.jpa.enhancer.ModelClass;
 import net.csdn.jpa.type.DBInfo;
+
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 
 import static net.csdn.common.logging.support.MessageFormat.format;
 import static net.csdn.enhancer.AssociatedHelper.*;
@@ -23,6 +32,48 @@ public class ManyToManyEnhancer {
 
     public ManyToManyEnhancer(ModelClass modelClass) {
         this.modelClass = modelClass;
+    }
+      /*
+                @JoinTable(name="CUST_PHONE",
+        joinColumns=
+            @JoinColumn(name="CUST_ID", referencedColumnName="ID"),
+        inverseJoinColumns=
+            @JoinColumn(name="PHONE_ID", referencedColumnName="ID")
+        )
+    */
+
+    private void addManyToManyAnnotation(CtField ctField, CtField other, String tableName) {
+        if (ctField.hasAnnotation(JoinTable.class)) return;
+        ConstPool constPool = ctField.getFieldInfo2().getConstPool();
+        AnnotationsAttribute attr = new AnnotationsAttribute(constPool, AnnotationsAttribute.visibleTag);
+        for (Object temp : ctField.getFieldInfo().getAttributes()) {
+            AttributeInfo info = (AttributeInfo) temp;
+            if (info instanceof AnnotationsAttribute) {
+                attr = (AnnotationsAttribute) info;
+            }
+        }
+        javassist.bytecode.annotation.Annotation joinTable = new javassist.bytecode.annotation.Annotation(JoinTable.class.getName(), constPool);
+        joinTable.addMemberValue("name", new StringMemberValue(tableName, constPool));
+
+        javassist.bytecode.annotation.Annotation joinColumns = new javassist.bytecode.annotation.Annotation(JoinColumn.class.getName(), constPool);
+        joinColumns.addMemberValue("name", new StringMemberValue(Strings.toUnderscoreCase(other.getName() + "_id"), constPool));
+        joinColumns.addMemberValue("referencedColumnName", new StringMemberValue("id", constPool));
+
+        ArrayMemberValue t1 = new ArrayMemberValue(constPool);
+        t1.setValue(new AnnotationMemberValue[]{new AnnotationMemberValue(joinColumns, constPool)});
+
+        joinTable.addMemberValue("joinColumns", t1);
+
+        javassist.bytecode.annotation.Annotation inverseJoinColumns = new javassist.bytecode.annotation.Annotation(JoinColumn.class.getName(), constPool);
+        inverseJoinColumns.addMemberValue("name", new StringMemberValue(Strings.toUnderscoreCase(ctField.getName() + "_id"), constPool));
+        inverseJoinColumns.addMemberValue("referencedColumnName", new StringMemberValue("id", constPool));
+
+        ArrayMemberValue t2 = new ArrayMemberValue(constPool);
+        t2.setValue(new AnnotationMemberValue[]{new AnnotationMemberValue(inverseJoinColumns, constPool)});
+
+        joinTable.addMemberValue("inverseJoinColumns", t2);
+
+        attr.addAnnotation(joinTable);
     }
 
     public void enhancer() throws Exception {
@@ -53,16 +104,17 @@ public class ManyToManyEnhancer {
                         setMappedBy(other, ctField.getName(), "ManyToMany");
                         isMaster = true;
                         finalTableName = maybeTable1;
-
+                        addManyToManyAnnotation(ctField, other, maybeTable1);
                     }
 
                     if (dbInfo.tableNames.contains(maybeTable2)) {
                         setMappedBy(ctField, mappedByFieldName, "ManyToMany");
                         finalTableName = maybeTable2;
+                        addManyToManyAnnotation(other, ctField, maybeTable2);
+
                     }
                     setManyToManyHint(other);
                 }
-
 
                 findAndRemoveMethod(ctClass, ctField, mappedByClassName);
                 findAndRemoveMethod(ctClass, ctField.getName());

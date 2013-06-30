@@ -8,6 +8,7 @@ import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.annotation.MemberValue;
 import net.csdn.common.enhancer.EnhancerHelper;
 import net.csdn.jpa.JPA;
+import net.csdn.jpa.enhancer.ModelClass;
 
 import java.io.DataInputStream;
 import java.lang.annotation.Annotation;
@@ -30,7 +31,7 @@ public abstract class ActiveORMEnhancer {
 
     public abstract CtClass enhanceThisClass(DataInputStream dataInputStream) throws Exception;
 
-    public abstract void enhanceThisClass2(List<CtClass> ctClasses) throws Exception;
+    public abstract List<ModelClass> enhanceThisClass2(List<CtClass> ctClasses) throws Exception;
 
     protected boolean hasAnnotation(CtClass ctClass, String annotation) throws ClassNotFoundException {
         return EnhancerHelper.hasAnnotation(ctClass, annotation);

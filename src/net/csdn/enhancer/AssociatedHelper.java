@@ -10,6 +10,8 @@ import javassist.bytecode.annotation.EnumMemberValue;
 import javassist.bytecode.annotation.StringMemberValue;
 import net.csdn.annotation.association.ManyToManyHint;
 import net.csdn.common.enhancer.EnhancerHelper;
+import net.csdn.common.logging.CSLogger;
+import net.csdn.common.logging.Loggers;
 import net.csdn.jpa.JPA;
 import net.csdn.jpa.enhancer.ModelClass;
 import org.apache.commons.lang.StringUtils;
@@ -24,6 +26,9 @@ import java.util.List;
  * Time: 下午7:14
  */
 public class AssociatedHelper {
+
+    private static CSLogger logger = Loggers.getLogger(AssociatedHelper.class);
+
     public static CtField findAssociatedField(ModelClass modelClass, String targetClassName) throws Exception {
         CtClass ctClass = modelClass.originClass;
         CtClass other = ctClass.getClassPool().get(targetClassName);
@@ -42,7 +47,7 @@ public class AssociatedHelper {
 
     public static CtField[] getDeclaredFields(ModelClass modelClass) throws Exception {
         List<CtField> ctFields = new ArrayList<CtField>();
-        if (modelClass.isInheritance()) {
+        if (ModelClass.isInheritance(modelClass.originClass)) {
             for (CtField ctField : modelClass.originClass.getSuperclass().getDeclaredFields()) {
                 ctFields.add(ctField);
             }
@@ -140,6 +145,10 @@ public class AssociatedHelper {
         AnnotationsAttribute annotationsAttribute = EnhancerHelper.getAnnotations(ctField);
         ConstPool constPool = ctField.getFieldInfo2().getConstPool();
         Annotation annotation = annotationsAttribute.getAnnotation("javax.persistence." + type);
+        if (annotation == null) {
+
+            return;
+        }
         StringMemberValue mappedBy = (StringMemberValue) annotation.getMemberValue("mappedBy");
         if (mappedBy == null || StringUtils.isEmpty(mappedBy.getValue())) {
             annotation.addMemberValue("mappedBy", new StringMemberValue(mappedByFieldName, constPool));

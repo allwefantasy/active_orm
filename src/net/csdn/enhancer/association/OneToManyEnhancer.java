@@ -31,6 +31,7 @@ public class OneToManyEnhancer {
 
                 String mappedByFieldName = findAssociatedFieldName(modelClass, clzzName);
                 String mappedByClassName = ctClass.getName();
+                if (mappedByFieldName == null) return;
 
                 //如果没有设置mappedBy我们帮他设置吧
                 setMappedBy(ctField, mappedByFieldName, "OneToMany");

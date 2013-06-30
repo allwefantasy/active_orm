@@ -4,6 +4,9 @@ import net.csdn.common.exception.AutoGeneration;
 import net.csdn.jpa.exception.JPAQueryException;
 import net.csdn.modules.persist.mysql.MysqlClient;
 
+import javax.persistence.Access;
+import javax.persistence.AccessType;
+import javax.persistence.MappedSuperclass;
 import javax.persistence.Query;
 import java.util.Arrays;
 import java.util.List;

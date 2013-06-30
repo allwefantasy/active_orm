@@ -28,6 +28,7 @@ import static net.csdn.common.collections.WowCollections.list;
  * Date: 12-6-26
  * Time: 下午9:53
  */
+
 public class JPABase implements GenericModel {
 
     protected CSLogger logger = Loggers.getLogger(getClass());
