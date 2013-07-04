@@ -148,10 +148,11 @@ public class EntityEnhancer implements BitEnhancer {
             //modelClass have no table to mapping
             autoInhanceProperty(modelClass);
             autoInjectGetSet(modelClass);
+            AssociationEnhancer associationEnhancer = new AssociationEnhancer(settings);
             for (ModelClass mc : leafNodes) {
                 autoInjectProperty(mc);
             }
-            new AssociationEnhancer(settings).enhance(list(modelClass));
+            associationEnhancer.enhance(list(modelClass));
         } else {
             Inheritance inheritance = (Inheritance) ct.getAnnotation(Inheritance.class);
             if (inheritance.strategy().equals(InheritanceType.JOINED)) {

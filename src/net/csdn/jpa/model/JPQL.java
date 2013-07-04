@@ -191,7 +191,7 @@ public class JPQL {
             this.order = "";
             return this;
         }
-        this.order = "order by " + EMPTY_STRING + defaultName + "." + parse(order);
+        this.order = "order by " + EMPTY_STRING + parse(order);
         return this;
     }
 

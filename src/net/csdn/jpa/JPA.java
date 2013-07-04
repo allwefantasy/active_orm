@@ -178,7 +178,7 @@ public class JPA {
         properties.put("hibernate.show_sql", settings().get("orm.show_sql", "true"));
         properties.put("hibernate.connection.driver_class", "com.mysql.jdbc.Driver");
         properties.put("hibernate.connection.password", mysqlSetting.get("password"));
-        properties.put("hibernate.connection.url", "jdbc:mysql://" + mysqlSetting.get("host") + "/" + mysqlSetting.get("database"));
+        properties.put("hibernate.connection.url", "jdbc:mysql://" + mysqlSetting.get("host") + "/" + mysqlSetting.get("database") + "?useUnicode=true&characterEncoding=utf8");
         properties.put("hibernate.connection.username", mysqlSetting.get("username"));
         properties.put("hibernate.dialect", "org.hibernate.dialect.MySQLDialect");
         properties.put("hibernate.c3p0.min_size", settings().get("orm.pool_min_size", "20"));

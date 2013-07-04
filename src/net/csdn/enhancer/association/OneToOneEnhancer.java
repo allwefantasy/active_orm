@@ -3,6 +3,7 @@ package net.csdn.enhancer.association;
 import javassist.CtClass;
 import javassist.CtField;
 import javassist.CtMethod;
+import javassist.Modifier;
 import javassist.bytecode.annotation.StringMemberValue;
 import net.csdn.common.Strings;
 import net.csdn.common.enhancer.EnhancerHelper;
@@ -56,6 +57,16 @@ public class OneToOneEnhancer {
                 AssociatedHelper.findAndRemoveMethod(ctClass, ctField, mappedByClassName);
                 AssociatedHelper.findAndRemoveMethod(ctClass, ctField.getName());
 
+                CtMethod ctMethod = ModelClass.findTTMethod(ctClass, ctField.getName());
+                if (ctMethod != null) {
+                    ctMethod.setModifiers(Modifier.PRIVATE);
+                }
+                ctMethod = ModelClass.findTTMethod(ctClass, ctField.getName(), new CtClass[]{
+                        ctField.getType()
+                });
+                if (ctMethod != null) {
+                    ctMethod.setModifiers(Modifier.PRIVATE);
+                }
 
                 CtMethod wow = CtMethod.make(
                         format("public net.csdn.jpa.association.Association {}() {" +

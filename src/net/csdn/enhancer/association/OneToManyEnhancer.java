@@ -3,6 +3,7 @@ package net.csdn.enhancer.association;
 import javassist.CtClass;
 import javassist.CtField;
 import javassist.CtMethod;
+import javassist.Modifier;
 import net.csdn.common.enhancer.EnhancerHelper;
 import net.csdn.jpa.enhancer.ModelClass;
 
@@ -43,6 +44,18 @@ public class OneToManyEnhancer {
                 String propertyName = mappedByFieldName.substring(0, 1).toUpperCase() + mappedByFieldName.substring(1);
                 String getter = "set" + propertyName;
 
+
+                CtMethod ctMethod = ModelClass.findTTMethod(ctClass, ctField.getName());
+                if (ctMethod != null) {
+                    ctMethod.setModifiers(Modifier.PRIVATE);
+                }
+                ctMethod = ModelClass.findTTMethod(ctClass, ctField.getName(), new CtClass[]{
+                        ctField.getType()
+                });
+                if (ctMethod != null) {
+                    ctMethod.setModifiers(Modifier.PRIVATE);
+                }
+
                 CtMethod wow = CtMethod.make(
                         format("public net.csdn.jpa.association.Association {}() {" +
                                 "net.csdn.jpa.association.Association obj = new net.csdn.jpa.association.Association(this,\"{}\",\"{}\",\"{}\");return obj;" +
@@ -50,6 +63,7 @@ public class OneToManyEnhancer {
                         )
                         ,
                         ctClass);
+
                 ctClass.addMethod(wow);
 
                 CtMethod wow2 = CtMethod.make(
@@ -61,6 +75,8 @@ public class OneToManyEnhancer {
                         )
                         ,
                         ctClass);
+
+
                 ctClass.addMethod(wow2);
             }
         }

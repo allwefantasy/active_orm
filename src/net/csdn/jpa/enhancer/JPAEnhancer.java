@@ -6,7 +6,9 @@ import net.csdn.common.settings.Settings;
 import net.csdn.enhancer.ActiveORMEnhancer;
 
 import java.io.DataInputStream;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static net.csdn.common.collections.WowCollections.list;
 
@@ -69,7 +71,7 @@ public class JPAEnhancer extends ActiveORMEnhancer {
 
         buildModelClassTree(modelClasses);
 
-        List<ModelClass> result = Lists.newArrayList();
+        Set<ModelClass> result = new HashSet();
 
         for (ModelClass modelClass : ModelClass.ROOTS) {
             if (modelClass.isLeafNode()) {
@@ -80,8 +82,8 @@ public class JPAEnhancer extends ActiveORMEnhancer {
             result.addAll(modelClass.findLeafNodes());
         }
         new EntityEnhancer(settings).enhance(ModelClass.ROOTS);
-        new ClassMethodEnhancer(settings).enhance(result);
-        new AssociationEnhancer(settings).enhance(result);
+        new ClassMethodEnhancer(settings).enhance(Lists.newArrayList(result));
+        new AssociationEnhancer(settings).enhance(Lists.newArrayList(result));
         return ModelClass.ROOTS;
     }
 

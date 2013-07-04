@@ -38,7 +38,7 @@ public class AssociatedHelper {
                 continue;
             String wow = findAssociatedClassName(otherField);
             CtClass wowCtClass = JPA.classPool().get(wow);
-            if (wowCtClass.subtypeOf(ctClass) && EnhancerHelper.hasAnnotationWithPrefix(other, "javax.persistence.")) {
+            if (wowCtClass==ctClass && EnhancerHelper.hasAnnotationWithPrefix(other, "javax.persistence.")) {
                 return otherField;
             }
         }
@@ -143,10 +143,10 @@ public class AssociatedHelper {
 
     public static void setMappedBy(CtField ctField, String mappedByFieldName, String type) {
         AnnotationsAttribute annotationsAttribute = EnhancerHelper.getAnnotations(ctField);
+        if (annotationsAttribute == null) return;
         ConstPool constPool = ctField.getFieldInfo2().getConstPool();
         Annotation annotation = annotationsAttribute.getAnnotation("javax.persistence." + type);
         if (annotation == null) {
-
             return;
         }
         StringMemberValue mappedBy = (StringMemberValue) annotation.getMemberValue("mappedBy");

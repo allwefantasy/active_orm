@@ -3,6 +3,7 @@ package net.csdn.enhancer.association;
 import javassist.CtClass;
 import javassist.CtField;
 import javassist.CtMethod;
+import javassist.Modifier;
 import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.AttributeInfo;
 import javassist.bytecode.ConstPool;
@@ -120,6 +121,19 @@ public class ManyToManyEnhancer {
                 findAndRemoveMethod(ctClass, ctField.getName());
                 String propertyName = mappedByFieldName.substring(0, 1).toUpperCase() + mappedByFieldName.substring(1);
                 String getter = "get" + propertyName;
+
+
+                CtMethod ctMethod = ModelClass.findTTMethod(ctClass, ctField.getName());
+                if (ctMethod != null) {
+                    ctMethod.setModifiers(Modifier.PRIVATE);
+                }
+                ctMethod = ModelClass.findTTMethod(ctClass, ctField.getName(), new CtClass[]{
+                        ctField.getType()
+                });
+                if (ctMethod != null) {
+                    ctMethod.setModifiers(Modifier.PRIVATE);
+                }
+
 
                 CtMethod wow = CtMethod.make(
                         format("public net.csdn.jpa.association.Association {}() {" +

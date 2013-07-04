@@ -2,10 +2,8 @@ package net.csdn.jpa.enhancer;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import javassist.CtClass;
-import javassist.CtField;
-import javassist.Modifier;
-import javassist.NotFoundException;
+import com.google.common.collect.Sets;
+import javassist.*;
 import net.csdn.annotation.association.NotMapping;
 import net.csdn.common.Strings;
 
@@ -13,9 +11,7 @@ import javax.persistence.Inheritance;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static net.csdn.common.collections.WowCollections.list;
 
@@ -59,6 +55,10 @@ public class ModelClass {
         return this;
     }
 
+    public ModelClass parent() {
+        return parent;
+    }
+
     public boolean isLeafNode() {
         return children.size() == 0;
     }
@@ -84,7 +84,7 @@ public class ModelClass {
     }
 
     public static List<CtField> fields(CtClass tOriginClass, FieldFilter fieldFilter) {
-        List<CtField> ctFields = Lists.newArrayList();
+        Set<CtField> ctFields = Sets.newHashSet();
         for (CtField field : tOriginClass.getDeclaredFields()) {
             if (fieldFilter.filter(field)) {
                 ctFields.add(field);
@@ -108,11 +108,71 @@ public class ModelClass {
         } catch (NotFoundException e) {
             e.printStackTrace();
         }
-        return ctFields;
+        return Lists.newArrayList(ctFields);
     }
+
 
     public interface FieldFilter {
         public boolean filter(CtField field);
+    }
+
+
+    public static CtMethod findTTMethod(CtClass clazz, String methodName, CtClass... paramTypes) {
+        CtClass superclass = clazz;
+        try {
+            return superclass.getDeclaredMethod(methodName, paramTypes);
+        } catch (Exception e2) {
+            do {
+                try {
+                    superclass = superclass.getSuperclass();
+                    return superclass.getDeclaredMethod(methodName, paramTypes);
+                } catch (Exception e) {
+                    continue;
+                }
+            }
+            while (superclass != null && !Object.class.getName().equals(superclass.getName()));
+        }
+
+        return null;
+    }
+
+    public interface MethodFilter {
+        public boolean filter(CtMethod method);
+    }
+
+    public static List<CtMethod> findTTMethods(MethodFilter filter, CtClass clazz, String methodName) {
+        if (filter == null) filter = new MethodFilter() {
+            @Override
+            public boolean filter(CtMethod method) {
+                return true;
+            }
+        };
+        Set<CtMethod> methodSet = new HashSet();
+        CtClass superclass = clazz;
+        for (CtMethod method : clazz.getDeclaredMethods()) {
+            if (method.getName().equals(methodName)) {
+                if (filter.filter(method)) {
+                    methodSet.add(method);
+                }
+            }
+        }
+
+        do {
+            try {
+                superclass = superclass.getSuperclass();
+                for (CtMethod method : superclass.getDeclaredMethods()) {
+                    if (method.getName().equals(methodName)) {
+                        if (filter.filter(method)) {
+                            methodSet.add(method);
+                        }
+                    }
+                }
+            } catch (NotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+        while (superclass != null && !Object.class.getName().equals(superclass.getName()));
+        return Lists.newArrayList(methodSet);
     }
 
     public static boolean isInheritance(CtClass ct) {
