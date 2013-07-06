@@ -205,9 +205,13 @@ public class JPQL {
         return this;
     }
 
+    public Long countFetch(String countString) {
+        return count_fetch();
+    }
+
     public Long count_fetch(String countString) {
 
-        sql = "select " + parseSelect(countString) + EMPTY_STRING + "from" + EMPTY_STRING + entity + " as " + defaultName + EMPTY_STRING + joins + EMPTY_STRING + where + EMPTY_STRING + group + EMPTY_STRING + order + EMPTY_STRING;
+        sql = parseSelect(countString) + EMPTY_STRING + "from" + EMPTY_STRING + entity + " as " + defaultName + EMPTY_STRING + joins + EMPTY_STRING + where + EMPTY_STRING + group + EMPTY_STRING + order + EMPTY_STRING;
         //limit 1.取一条
         Query query = em().createQuery(sql);
 

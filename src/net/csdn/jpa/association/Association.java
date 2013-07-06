@@ -58,8 +58,8 @@ public class Association {
         this.targetObject = model;
         try {
             if (type.equals("javax.persistence.ManyToMany")) {
-                String idFiled1 = field + "_id";
-                String idFiled2 = targetField + "_id";
+                String idFiled1 = Strings.toUnderscoreCase(field) + "_id";
+                String idFiled2 = Strings.toUnderscoreCase(targetField) + "_id";
                 em().createNativeQuery(format("delete from " + tableName + " where {}={} and {}={}", idFiled1, targetObject.id(), idFiled2, object.id())).executeUpdate();
             }
         } catch (Exception e) {
@@ -89,8 +89,24 @@ public class Association {
         return null;
     }
 
+//    private JPQL jpql2() {
+//        Session session = JPA.getJPAConfig().getJPAContext().em().unwrap(Session.class);
+//        if (type.equals("javax.persistence.ManyToMany") || type.equals("javax.persistence.oneToMany")) {
+//            Query query = session.createFilter((Collection) ReflectHelper.method(object, targetField), "");
+//            query.
+//        }
+
     private JPQL jpql() {
-        return (JPQL) ReflectHelper.staticMethod(getTargetModelClass(), "where", targetField + "=:framework_service_holder", map("framework_service_holder", object));
+        JPQL jpql = null;
+        if (type.equals("javax.persistence.ManyToMany") || type.equals("javax.persistence.oneToMany")) {
+            jpql = (JPQL) ReflectHelper.staticMethod(getTargetModelClass(), "joins", targetField + " as framework_service_holder_" + targetField);
+        }
+        if (jpql != null) {
+            jpql.where(map("framework_service_holder_" + targetField, object));
+        } else {
+            jpql = (JPQL) ReflectHelper.staticMethod(getTargetModelClass(), "where", targetField + "=:framework_service_holder", map("framework_service_holder", object));
+        }
+        return jpql;
     }
 
     public JPQL where(String where, Map<String, Object> params) {

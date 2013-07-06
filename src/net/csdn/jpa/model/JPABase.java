@@ -20,6 +20,7 @@ import javax.persistence.Transient;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static net.csdn.common.collections.WowCollections.list;
 
@@ -163,6 +164,15 @@ public class JPABase implements GenericModel {
         } else {
             return false;
         }
+    }
+
+    public boolean merge(Map params) {
+        try {
+            BeanUtils.copyProperties(this, params);
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
     }
 
     public static void setInjector(Injector injector) {
