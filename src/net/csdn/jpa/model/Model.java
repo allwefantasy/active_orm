@@ -4,9 +4,6 @@ import net.csdn.common.exception.AutoGeneration;
 import net.csdn.jpa.exception.JPAQueryException;
 import net.csdn.modules.persist.mysql.MysqlClient;
 
-import javax.persistence.Access;
-import javax.persistence.AccessType;
-import javax.persistence.MappedSuperclass;
 import javax.persistence.Query;
 import java.util.Arrays;
 import java.util.List;
@@ -24,6 +21,10 @@ public class Model extends JPABase {
 
     public static List<Map> findBySql(String sql, Object... params) {
         return mysqlClient.query(sql, params);
+    }
+
+    public static JPAQuery findByHQL(String hql, Object... params) {
+        return new JPQL(getJPAContext()).find(null, hql, params);
     }
 
     public static MysqlClient nativeSqlClient() {
@@ -71,6 +72,13 @@ public class Model extends JPABase {
         throw new AutoGeneration();
     }
 
+    public static JPQL in(String cc, Map params) {
+        throw new AutoGeneration();
+    }
+
+    public static JPQL in(String cc, List params) {
+        throw new AutoGeneration();
+    }
 
     public static JPQL select(String cc) {
         throw new AutoGeneration();

@@ -1,5 +1,6 @@
 package net.csdn.jpa.model;
 
+import com.google.common.collect.Maps;
 import net.csdn.common.logging.CSLogger;
 import net.csdn.common.logging.Loggers;
 import net.csdn.common.param.ParamBinding;
@@ -92,6 +93,31 @@ public class JPQL {
             con.add(key + "=:" + key);
         }
         where(join(con, " AND "), whereQuery);
+        return this;
+    }
+
+    //name in (:names)
+    public JPQL in(String fieldName, Map bindings) {
+
+        List con = list();
+        for (Object key : bindings.keySet()) {
+            con.add(fieldName + " in (:" + key + ")");
+        }
+        where(join(con, " AND "), bindings);
+        return this;
+    }
+
+
+    private static String SQL_PARAM_PREFIX = "SF_";
+
+    //name in (:names)
+    public JPQL in(String fieldName, List params) {
+
+        List con = list();
+        Map bindings = Maps.newHashMap();
+        con.add(fieldName + " in (:" + SQL_PARAM_PREFIX + fieldName + ")");
+        bindings.put(SQL_PARAM_PREFIX + fieldName, params);
+        where(join(con, " AND "), bindings);
         return this;
     }
 

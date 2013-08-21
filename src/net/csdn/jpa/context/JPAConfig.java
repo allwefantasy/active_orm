@@ -66,16 +66,6 @@ public class JPAConfig {
         return oldContext;
     }
 
-
-    public void setJPAContext(JPAContext jpaContext) {
-        local.set(jpaContext);
-    }
-
-
-    public boolean threadHasJPAContext() {
-        return local.get() != null;
-    }
-
     protected void clearJPAContext() {
         JPAContext context = local.get();
         if (context != null) {

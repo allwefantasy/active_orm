@@ -121,6 +121,13 @@ public class ClassMethodEnhancer implements BitEnhancer {
         CtMethod where = CtMethod.make("public static net.csdn.jpa.model.JPQL where(String cc){return getJPAContext().jpql(\"" + simpleEntityName + "\").where(cc);}", ctClass);
         ctClass.addMethod(where);
 
+// in query
+        CtMethod in = CtMethod.make("public static net.csdn.jpa.model.JPQL in(String cc,java.util.Map params){return getJPAContext().jpql(\"" + simpleEntityName + "\").in(cc,params);}", ctClass);
+        ctClass.addMethod(in);
+
+        CtMethod in2 = CtMethod.make("public static net.csdn.jpa.model.JPQL in(String cc,java.util.List params){return getJPAContext().jpql(\"" + simpleEntityName + "\").in(cc,params);}", ctClass);
+        ctClass.addMethod(in2);
+
 // where2
         CtMethod where2 = CtMethod.make("public static net.csdn.jpa.model.JPQL where(String cc,java.util.Map params){return getJPAContext().jpql(\"" + simpleEntityName + "\").where(cc,params);}", ctClass);
         ctClass.addMethod(where2);

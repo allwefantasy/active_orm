@@ -168,25 +168,32 @@ public class JPA {
         return ormConfiguration.dbInfo;
     }
 
-    private static Map<String, String> properties() {
+    public static Map<String, String> properties() {
         Map<String, String> properties = new HashMap<String, String>();
 
         Map<String, Settings> groups = settings().getGroups(mode() + ".datasources");
 
         Settings mysqlSetting = groups.get("mysql");
 
-        properties.put("hibernate.show_sql", settings().get("orm.show_sql", "true"));
-        properties.put("hibernate.connection.driver_class", "com.mysql.jdbc.Driver");
-        properties.put("hibernate.connection.password", mysqlSetting.get("password"));
-        properties.put("hibernate.connection.url", "jdbc:mysql://" + mysqlSetting.get("host") + "/" + mysqlSetting.get("database") + "?useUnicode=true&characterEncoding=utf8");
-        properties.put("hibernate.connection.username", mysqlSetting.get("username"));
-        properties.put("hibernate.dialect", "org.hibernate.dialect.MySQLDialect");
-        properties.put("hibernate.c3p0.min_size", settings().get("orm.pool_min_size", "20"));
-        properties.put("hibernate.c3p0.max_size", settings().get("orm.pool_max_size", "20"));
-        properties.put("hibernate.c3p0.timeout", settings().get("orm.timeout", "300"));
-        properties.put("hibernate.c3p0.max_statements", settings().get("orm.max_statements", "50"));
-        properties.put("hibernate.c3p0.idle_test_period", settings().get("orm.idle_test_period", "3000"));
-        //    properties.put("hibernate.query.factory_class", "org.hibernate.hql.internal.classic.ClassicQueryTranslatorFactory");
+        properties.put("hibernate.connection.provider_class", mysqlSetting.get("provider_class", "net.csdn.hibernate.support.DruidConnectionProvider"));
+        properties.put("show_sql", mysqlSetting.get("show_sql", "true"));
+        properties.put("driver_class", mysqlSetting.get("driver", "com.mysql.jdbc.Driver"));
+        properties.put("dialect", "org.hibernate.dialect.MySQLDialect");
+        properties.put("format_sql", mysqlSetting.get("format_sql", "false"));
+        properties.put("url", "jdbc:mysql://" + mysqlSetting.get("host") + "/" + mysqlSetting.get("database") + "?useUnicode=true&characterEncoding=utf8");
+        properties.put("username", mysqlSetting.get("username"));
+        properties.put("password", mysqlSetting.get("password"));
+        properties.put("maxActive", mysqlSetting.get("maxActive", "30"));
+        properties.put("minIdle", mysqlSetting.get("minIdle", "3"));
+        properties.put("initialSize", mysqlSetting.get("initialSize", "3"));
+        properties.put("maxWait", mysqlSetting.get("maxActive", "20"));
+        properties.put("testOnBorrow", mysqlSetting.get("testOnBorrow", "false"));
+        properties.put("validationQuery", mysqlSetting.get("validationQuery", "SELECT 1"));
+        properties.put("validationQueryTimeout", mysqlSetting.get("validationQueryTimeout", "60000"));
+        properties.put("init", mysqlSetting.get("init", "true"));
+        properties.put("testWhileIdle", mysqlSetting.get("testWhileIdle", "true"));
+        properties.put("connectionProperties", "druid.stat.logSlowSql=" + mysqlSetting.get("logSlowSql", "true") + ";druid.stat.slowSqlMillis=" + mysqlSetting.get("slowSqlMillis", "500"));
+        properties.put("filters", "log4j");
         return properties;
     }
 
