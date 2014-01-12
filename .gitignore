@@ -1,2 +1,5 @@
 /.DS_Store
 CSDNORM.iml
+ActiveORM.iml
+/.idea
+/target

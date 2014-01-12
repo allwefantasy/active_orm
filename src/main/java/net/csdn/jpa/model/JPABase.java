@@ -1,6 +1,5 @@
 package net.csdn.jpa.model;
 
-import com.google.inject.Injector;
 import net.csdn.common.logging.CSLogger;
 import net.csdn.common.logging.Loggers;
 import net.csdn.common.reflect.ReflectHelper;
@@ -36,14 +35,13 @@ public class JPABase implements GenericModel {
     public final static List validateParses = list();
 
     public final static MysqlClient mysqlClient = new MysqlClient(new DataSourceManager(JPA.settings()), JPA.settings());
-    private static Injector injector;
 
     public static JPAContext getJPAContext() {
         return getJPAConfig().getJPAContext();
     }
 
     public static <T> T findService(Class<T> clz) {
-        return injector.getInstance(clz);
+        return JPA.injector().getInstance(clz);
     }
 
 
@@ -173,10 +171,6 @@ public class JPABase implements GenericModel {
             return false;
         }
         return true;
-    }
-
-    public static void setInjector(Injector injector) {
-        JPABase.injector = injector;
     }
 
     @Override
