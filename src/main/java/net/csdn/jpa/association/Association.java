@@ -71,6 +71,14 @@ public class Association {
         return jpql().fetch();
     }
 
+    public long count() {
+        return jpql().count_fetch();
+    }
+
+    public long count(String countStr) {
+        return jpql().count_fetch(countStr);
+    }
+
 
     private Class getTargetModelClass() {
         try {
@@ -98,7 +106,7 @@ public class Association {
 
     private JPQL jpql() {
         JPQL jpql = null;
-        if (type.equals("javax.persistence.ManyToMany") || type.equals("javax.persistence.oneToMany")) {
+        if (type.equals("javax.persistence.ManyToMany") || type.equals("javax.persistence.OneToMany")) {
             jpql = (JPQL) ReflectHelper.staticMethod(getTargetModelClass(), "joins", targetField + " as framework_service_holder_" + targetField);
         }
         if (jpql != null) {
