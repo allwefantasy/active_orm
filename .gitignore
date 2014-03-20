@@ -3,3 +3,5 @@ CSDNORM.iml
 ActiveORM.iml
 /.idea
 /target
+pom.xml.releaseBackup
+release.properties
