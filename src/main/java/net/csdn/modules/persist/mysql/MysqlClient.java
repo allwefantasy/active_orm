@@ -135,7 +135,7 @@ public class MysqlClient {
 
 
     public <T> Set<T> projectionByColumn(String sql, final String columnName, Object... objs) {
-        return (Set<T>) defaultMysqlService().executeQuery(sql, new SqlCallback() {
+        return (Set<T>) this.executeQuery(sql, new SqlCallback() {
             @Override
             public Object execute(ResultSet rs) {
                 Set<Object> temp = new HashSet<Object>();
@@ -153,7 +153,7 @@ public class MysqlClient {
     }
 
     public <T> List<T> projectionByColumn2(String sql, final String columnName, Object... objs) {
-        return (List<T>) defaultMysqlService().executeQuery(sql, new SqlCallback() {
+        return (List<T>) this.executeQuery(sql, new SqlCallback() {
             @Override
             public Object execute(ResultSet rs) {
                 List<Object> temp = new ArrayList<Object>();
@@ -171,7 +171,7 @@ public class MysqlClient {
     }
 
     public List<Map> query(String sql, Object... objs) {
-        return (List<Map>) defaultMysqlService().executeQuery(sql, new SqlCallback() {
+        return (List<Map>) this.executeQuery(sql, new SqlCallback() {
             @Override
             public Object execute(ResultSet rs) {
                 return MysqlClient.rsToMaps(rs);
@@ -180,7 +180,7 @@ public class MysqlClient {
     }
 
     public List<Map> streamingQuery(String sql, Object... objs) {
-        return (List<Map>) defaultMysqlService().executeStreamingQuery(sql, new SqlCallback() {
+        return (List<Map>) this.executeStreamingQuery(sql, new SqlCallback() {
             @Override
             public Object execute(ResultSet rs) {
                 return MysqlClient.rsToMaps(rs);
@@ -189,7 +189,7 @@ public class MysqlClient {
     }
 
     public Map single_query(String sql, Object... objs) {
-        return (Map) defaultMysqlService().executeQuery(sql, new SqlCallback() {
+        return (Map) this.executeQuery(sql, new SqlCallback() {
             @Override
             public Object execute(ResultSet rs) {
                 try {

@@ -59,7 +59,7 @@ public class DataSourceManager {
 
     private DataSource buildPool(Settings mysqlSetting) {
         try {
-            DruidDataSource dataSource = (DruidDataSource) DruidDataSourceFactory.createDataSource(JPA.properties());
+            DruidDataSource dataSource = (DruidDataSource) DruidDataSourceFactory.createDataSource(JPA.properties(mysqlSetting));
             return dataSource;
         } catch (Exception e) {
             e.printStackTrace();

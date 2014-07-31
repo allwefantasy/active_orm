@@ -169,18 +169,21 @@ public class JPA {
     }
 
     public static Map<String, String> properties() {
-        Map<String, String> properties = new HashMap<String, String>();
 
         Map<String, Settings> groups = settings().getGroups(mode() + ".datasources");
 
         Settings mysqlSetting = groups.get("mysql");
+        return properties(mysqlSetting);
+    }
 
+    public static Map<String, String> properties(Settings mysqlSetting) {
+        Map<String, String> properties = new HashMap<String, String>();
         properties.put("hibernate.connection.provider_class", mysqlSetting.get("provider_class", "net.csdn.hibernate.support.DruidConnectionProvider"));
         properties.put("show_sql", mysqlSetting.get("show_sql", "true"));
         properties.put("driver_class", mysqlSetting.get("driver", "com.mysql.jdbc.Driver"));
         properties.put("dialect", "org.hibernate.dialect.MySQLDialect");
         properties.put("format_sql", mysqlSetting.get("format_sql", "false"));
-        properties.put("url", "jdbc:mysql://" + mysqlSetting.get("host") + "/" + mysqlSetting.get("database") + "?useUnicode=true&characterEncoding=utf8");
+        properties.put("url", "jdbc:mysql://" + mysqlSetting.get("host") + ":" + mysqlSetting.get("port") + "/" + mysqlSetting.get("database") + "?useUnicode=true&characterEncoding=utf8");
         properties.put("username", mysqlSetting.get("username"));
         properties.put("password", mysqlSetting.get("password"));
         properties.put("maxActive", mysqlSetting.get("maxActive", "50"));
