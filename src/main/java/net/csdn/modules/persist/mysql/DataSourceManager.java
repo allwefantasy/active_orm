@@ -3,6 +3,8 @@ package net.csdn.modules.persist.mysql;
 import com.alibaba.druid.pool.DruidDataSource;
 import com.alibaba.druid.pool.DruidDataSourceFactory;
 import com.google.inject.Inject;
+import net.csdn.common.logging.CSLogger;
+import net.csdn.common.logging.Loggers;
 import net.csdn.common.settings.Settings;
 import net.csdn.jpa.JPA;
 
@@ -19,7 +21,7 @@ public class DataSourceManager {
 
     private Map<String, DataSource> dataSourceMap;
     private Settings settings;
-
+    private CSLogger logger = Loggers.getLogger(DataSourceManager.class);
 
     @Inject
     public DataSourceManager(Settings _settings) {
@@ -41,7 +43,15 @@ public class DataSourceManager {
         Map<String, Settings> groups = settings.getGroups(JPA.mode() + ".datasources");
         for (Map.Entry<String, Settings> group : groups.entrySet()) {
             if (group.getKey().equals("mysql")) {
+
+                logger.info("初始化连接池:" + group.getValue().getAsMap());
                 tempDataSourceMap.put(group.getKey(), buildPool(group.getValue()));
+            } else if (group.getKey().equals("multi-mysql")) {
+                Map<String, Settings> mysqlGroups = settings.getGroups(JPA.mode() + ".datasources.multi-mysql");
+                for (Map.Entry<String, Settings> temp : mysqlGroups.entrySet()) {
+                    logger.info("初始化连接池:" + temp.getValue().getAsMap());
+                    tempDataSourceMap.put(temp.getKey(), buildPool(temp.getValue()));
+                }
             }
         }
         return tempDataSourceMap;

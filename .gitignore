@@ -5,3 +5,4 @@ ActiveORM.iml
 /target
 pom.xml.releaseBackup
 release.properties
+/company-pom.xml
