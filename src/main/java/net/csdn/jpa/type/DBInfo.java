@@ -43,6 +43,8 @@ public class DBInfo {
         Class.forName("com.mysql.jdbc.Driver").newInstance();
         Map<String, Settings> groups = settings.getGroups(JPA.mode() + ".datasources");
         Settings mysqlSetting = groups.get("mysql");
+        if(mysqlSetting == null){return;}
+
         String url = "jdbc:mysql://{}:{}/{}?useUnicode=true&characterEncoding=utf8";
         url = format(url, mysqlSetting.get("host", "127.0.0.1"), mysqlSetting.get("port", "3306"), mysqlSetting.get("database", "csdn_search_client"));
         conn = DriverManager.getConnection(url, mysqlSetting.get("username"), mysqlSetting.get("password"));
