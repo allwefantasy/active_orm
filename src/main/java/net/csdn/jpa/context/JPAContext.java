@@ -15,6 +15,7 @@ import javax.persistence.PersistenceException;
 public class JPAContext {
     private JPAConfig jpaConfig;
     private EntityManager entityManager;
+    private boolean closed;
 
     protected JPAContext(JPAConfig jpaConfig) {
 
@@ -65,15 +66,39 @@ public class JPAContext {
                 }
             }
         } finally {
-            entityManager.close();
-            //clear context
+            // clearJPAContext performs the idempotent rollback+close below.
             jpaConfig.clearJPAContext();
         }
 
     }
 
-    protected void close() {
-        entityManager.close();
+    protected synchronized void close() {
+        if (closed) {
+            return;
+        }
+        RuntimeException failure = null;
+        try {
+            if (entityManager.isOpen() && entityManager.getTransaction() != null
+                    && entityManager.getTransaction().isActive()) {
+                entityManager.getTransaction().rollback();
+            }
+        } catch (RuntimeException e) {
+            failure = e;
+        }
+        try {
+            if (entityManager.isOpen()) {
+                entityManager.close();
+            }
+        } catch (RuntimeException e) {
+            if (failure == null) {
+                failure = e;
+            }
+        }
+        closed = true;
+        jpaConfig.unregisterContext(this);
+        if (failure != null) {
+            throw failure;
+        }
     }
 
     public EntityManager em() {

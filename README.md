@@ -7,6 +7,12 @@ The philosophy of ActiveORM is to provide a familiar API to Java developers who 
 ActiveORM is a really cool ORM in Java community corresponding to original Hibernate API.
 Coding for fun Yay!
 
+## Database engines
+
+ActiveORM works against MySQL (default) or PostgreSQL — see
+[docs/postgresql-support.md](docs/postgresql-support.md) for configuration,
+requirements, lifecycle notes and the live-database test flags.
+
 ##Sample code
 
 ```sql

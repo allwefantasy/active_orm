@@ -7,7 +7,6 @@ import net.csdn.jpa.JPA;
 import net.csdn.jpa.association.Association;
 import net.csdn.jpa.context.JPAConfig;
 import net.csdn.jpa.context.JPAContext;
-import net.csdn.modules.persist.mysql.DataSourceManager;
 import net.csdn.modules.persist.mysql.MysqlClient;
 import net.csdn.validate.ValidateParse;
 import net.csdn.validate.ValidateResult;
@@ -34,7 +33,9 @@ public class JPABase implements GenericModel {
     protected CSLogger logger = Loggers.getLogger(getClass());
     public final static List validateParses = list();
 
-    public final static MysqlClient mysqlClient = new MysqlClient(new DataSourceManager(JPA.settings()), JPA.settings());
+    //Dispatcher only. Pools are (re)built by JPA.configure() through
+    //MysqlClient.refreshPools so reconfiguration does not keep stale pools.
+    public final static MysqlClient mysqlClient = new MysqlClient();
 
     public static JPAContext getJPAContext() {
         return getJPAConfig().getJPAContext();

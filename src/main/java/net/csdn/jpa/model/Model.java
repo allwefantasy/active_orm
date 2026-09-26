@@ -20,7 +20,11 @@ import static net.csdn.common.collections.WowCollections.map;
 public class Model extends JPABase {
 
     public static List<Map> findBySql(String sql, Object... params) {
-        return mysqlClient.query(sql, params);
+        MysqlClient client = mysqlClient.defaultMysqlService();
+        if (client == null) {
+            throw new IllegalStateException("primary datasource has no connection pool");
+        }
+        return client.query(sql, params);
     }
 
     public static JPAQuery findByHQL(String hql, Object... params) {

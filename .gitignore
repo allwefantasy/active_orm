@@ -6,3 +6,13 @@ ActiveORM.iml
 pom.xml.releaseBackup
 release.properties
 /company-pom.xml
+
+.auto-coder/
+/actions/
+/output.txt
+.autocoderrules
+.autocodertools
+.autocodercommands
+.autocoderagents
+.autocoderlinters
+.autocoderworkflow

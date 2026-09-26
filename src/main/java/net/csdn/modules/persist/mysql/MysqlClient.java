@@ -26,6 +26,20 @@ public class MysqlClient {
     private Settings settings;
 
 
+    public MysqlClient() {
+    }
+
+    /**
+     * (Re)builds the registered pools for the current configuration. Called by
+     * {@link net.csdn.jpa.JPA#configure}; existing pool entries are replaced.
+     */
+    public static void refreshPools(DataSourceManager dataSourceManager, Settings settings) {
+        closeAllPools();
+        for (Map.Entry<String, DataSource> entry : dataSourceManager.dataSourceMap().entrySet()) {
+            mysqlManagers.put(entry.getKey(), new MysqlClient(dataSourceManager, settings, entry.getValue()));
+        }
+    }
+
     public MysqlClient settings(Settings settings) {
         this.settings = settings;
         return this;
@@ -56,12 +70,38 @@ public class MysqlClient {
         this.dataSourceManager = dataSourceManager;
     }
 
+    public static void closeAllPools() {
+        for (MysqlClient client : mysqlManagers.values()) {
+            try {
+                DataSource dataSource = client.dataSource();
+                if (dataSource instanceof com.alibaba.druid.pool.DruidDataSource) {
+                    ((com.alibaba.druid.pool.DruidDataSource) dataSource).close();
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        mysqlManagers.clear();
+    }
+
     public MysqlClient mysqlService(String dataSourceName) {
         return mysqlManagers.get(dataSourceName);
     }
 
     public MysqlClient defaultMysqlService() {
-        return mysqlManagers.get("mysql");
+        String name = "mysql";
+        try {
+            Settings s = settings != null ? settings : net.csdn.jpa.JPA.settings();
+            if (s != null) {
+                net.csdn.jpa.JdbcEngine.Selection selection =
+                        net.csdn.jpa.JdbcEngine.primaryOrAbsent(s, net.csdn.jpa.JPA.mode());
+                if (selection != null) {
+                    name = selection.groupName();
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        MysqlClient client = mysqlManagers.get(name);
+        return client == null ? mysqlManagers.get("mysql") : client;
     }
 
     public DataSource dataSource() {

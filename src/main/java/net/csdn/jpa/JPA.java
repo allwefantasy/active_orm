@@ -21,7 +21,6 @@ import net.csdn.jpa.enhancer.ModelClass;
 import net.csdn.jpa.model.Model;
 import net.csdn.jpa.type.DBInfo;
 import net.csdn.jpa.type.DBType;
-import net.csdn.jpa.type.impl.MysqlType;
 import net.csdn.validate.ValidatorLoader;
 
 import java.io.DataInputStream;
@@ -75,6 +74,12 @@ public class JPA {
         ormConfiguration.buildDefaultDBInfo();
         loadModels();
         try {
+            net.csdn.modules.persist.mysql.MysqlClient.refreshPools(
+                    new net.csdn.modules.persist.mysql.DataSourceManager(settings()), settings());
+        } catch (Exception e) {
+            throw new IllegalStateException("datasource pools were not created", e);
+        }
+        try {
             new ValidatorLoader().load();
         } catch (Exception e) {
             e.printStackTrace();
@@ -83,12 +88,17 @@ public class JPA {
 
     public static synchronized JPAConfig getJPAConfig() {
         if (jpaConfig == null) {
+            JdbcEngine.Selection selection = JdbcEngine.primary(settings(), mode());
+            if (selection.disabled()) {
+                jpaConfig = JPAConfig.disabled(selection.groupName());
+                return jpaConfig;
+            }
             try {
                 modifyPersistenceXml(new Tuple<Settings, Environment>(settings(), environment()));
             } catch (Exception e) {
-                e.printStackTrace();
+                throw new IllegalStateException("persistence.xml was not written", e);
             }
-            jpaConfig = new JPAConfig(properties(), settings().get(JPA.mode() + ".datasources.mysql.database"));
+            jpaConfig = new JPAConfig(properties(selection.group(), selection.engine()), selection.group().get("database"));
         }
         return jpaConfig;
     }
@@ -97,14 +107,17 @@ public class JPA {
     private static void modifyPersistenceXml(Tuple<Settings, Environment> tuple) throws Exception {
 
         String fileContent = persistenceContent();
-        Map<String, Settings> groups = tuple.v1().getGroups(mode() + ".datasources");
-        Settings mysqlSetting = groups.get("mysql");
+        Settings datasourceSetting = JdbcEngine.primary(tuple.v1(), mode()).group();
         //
         StringBuffer stringBuffer = new StringBuffer();
         for (Class clzz : models.values()) {
             stringBuffer.append(format("<class>{}</class>", clzz.getName()));
         }
-        String path = classLoader().getResource(".").getPath();
+        java.net.URL root = classLoader().getResource(".");
+        if (root == null) {
+            throw new IllegalStateException("classloader has no writable classpath root for META-INF/persistence.xml");
+        }
+        String path = root.getPath();
         File persistDir = new File(path + "META-INF/");
         if (!persistDir.exists()) {
             persistDir.mkdirs();
@@ -113,7 +126,7 @@ public class JPA {
         if (persistFile.exists()) {
             persistFile.delete();
         }
-        Streams.copy(format(fileContent, mysqlSetting.get("database"), stringBuffer.toString()), new FileWriter(persistFile));
+        Streams.copy(format(fileContent, datasourceSetting.get("database"), stringBuffer.toString()), new FileWriter(persistFile));
     }
 
     private static String persistenceContent() {
@@ -124,6 +137,7 @@ public class JPA {
                 "             version=\"2.0\">\n" +
                 "    <persistence-unit name=\"{}\">\n" +
                 "        {}\n" +
+                "        <exclude-unlisted-classes/>\n" +
                 "        <properties>\n" +
                 "        </properties>\n" +
                 "    </persistence-unit>\n" +
@@ -169,36 +183,47 @@ public class JPA {
     }
 
     public static Map<String, String> properties() {
-
-        Map<String, Settings> groups = settings().getGroups(mode() + ".datasources");
-
-        Settings mysqlSetting = groups.get("mysql");
-        return properties(mysqlSetting);
+        JdbcEngine.Selection selection = JdbcEngine.primary(settings(), mode());
+        return properties(selection.group(), selection.engine());
     }
 
-    public static Map<String, String> properties(Settings mysqlSetting) {
+    public static Map<String, String> properties(Settings datasourceSetting) {
+        String engine = JdbcEngine.configuredEngine(datasourceSetting, JdbcEngine.MYSQL);
+        return properties(datasourceSetting, engine);
+    }
+
+    public static Map<String, String> properties(Settings datasourceSetting, String engineName) {
+        String engine = JdbcEngine.normalize(engineName);
+        if (datasourceSetting == null) {
+            throw new IllegalArgumentException("selected datasource " + engine + " is missing");
+        }
+        String driver = datasourceSetting.get("driver", JdbcEngine.defaultDriver(engine));
         Map<String, String> properties = new HashMap<String, String>();
-        properties.put("hibernate.connection.provider_class", mysqlSetting.get("provider_class", "net.csdn.hibernate.support.DruidConnectionProvider"));
-        properties.put("show_sql", mysqlSetting.get("show_sql", "true"));
-        properties.put("driver_class", mysqlSetting.get("driver", "com.mysql.jdbc.Driver"));
-        properties.put("dialect", "org.hibernate.dialect.MySQLDialect");
-        properties.put("format_sql", mysqlSetting.get("format_sql", "false"));
-        properties.put("url", "jdbc:mysql://" + mysqlSetting.get("host") + ":" + mysqlSetting.get("port") + "/" + mysqlSetting.get("database") + "?useUnicode=true&characterEncoding=utf8");
-        properties.put("username", mysqlSetting.get("username"));
-        properties.put("password", mysqlSetting.get("password"));
-        properties.put("maxActive", mysqlSetting.get("maxActive", "50"));
-        properties.put("minIdle", mysqlSetting.get("minIdle", "3"));
-        properties.put("initialSize", mysqlSetting.get("initialSize", "30"));
-        properties.put("maxWait", mysqlSetting.get("maxWait", "20"));
-        properties.put("testOnBorrow", mysqlSetting.get("testOnBorrow", "false"));
-        properties.put("validationQuery", mysqlSetting.get("validationQuery", "SELECT 1"));
-        properties.put("validationQueryTimeout", mysqlSetting.get("validationQueryTimeout", "60000"));
-        properties.put("removeAbandoned", mysqlSetting.get("removeAbandoned", "false"));
-        properties.put("removeAbandonedTimeout", mysqlSetting.get("removeAbandonedTimeout", "1800"));
-        properties.put("logAbandoned", mysqlSetting.get("logAbandoned", "false"));
-        properties.put("init", mysqlSetting.get("init", "true"));
-        properties.put("testWhileIdle", mysqlSetting.get("testWhileIdle", "true"));
-        properties.put("connectionProperties", "druid.stat.logSlowSql=" + mysqlSetting.get("logSlowSql", "true") + ";druid.stat.slowSqlMillis=" + mysqlSetting.get("slowSqlMillis", "500"));
+        properties.put("hibernate.connection.provider_class", datasourceSetting.get("provider_class", "net.csdn.hibernate.support.DruidConnectionProvider"));
+        properties.put("show_sql", datasourceSetting.get("show_sql", "true"));
+        properties.put("driver_class", driver);
+        properties.put("driverClassName", driver);
+        properties.put("dialect", datasourceSetting.get("dialect", JdbcEngine.defaultDialect(engine)));
+        properties.put("format_sql", datasourceSetting.get("format_sql", "false"));
+        if (JdbcEngine.POSTGRES.equals(engine)) {
+            properties.put("hibernate.default_schema", JdbcEngine.schemaIdentifier(datasourceSetting));
+        }
+        properties.put("url", JdbcEngine.jdbcUrl(datasourceSetting, engine));
+        properties.put("username", datasourceSetting.get("username"));
+        properties.put("password", datasourceSetting.get("password"));
+        properties.put("maxActive", datasourceSetting.get("maxActive", "50"));
+        properties.put("minIdle", datasourceSetting.get("minIdle", "3"));
+        properties.put("initialSize", datasourceSetting.get("initialSize", "30"));
+        properties.put("maxWait", datasourceSetting.get("maxWait", "20"));
+        properties.put("testOnBorrow", datasourceSetting.get("testOnBorrow", "false"));
+        properties.put("validationQuery", datasourceSetting.get("validationQuery", "SELECT 1"));
+        properties.put("validationQueryTimeout", datasourceSetting.get("validationQueryTimeout", "60000"));
+        properties.put("removeAbandoned", datasourceSetting.get("removeAbandoned", "false"));
+        properties.put("removeAbandonedTimeout", datasourceSetting.get("removeAbandonedTimeout", "1800"));
+        properties.put("logAbandoned", datasourceSetting.get("logAbandoned", "false"));
+        properties.put("init", datasourceSetting.get("init", "true"));
+        properties.put("testWhileIdle", datasourceSetting.get("testWhileIdle", "true"));
+        properties.put("connectionProperties", "druid.stat.logSlowSql=" + datasourceSetting.get("logSlowSql", "true") + ";druid.stat.slowSqlMillis=" + datasourceSetting.get("slowSqlMillis", "500"));
         properties.put("filters", "log4j");
         return properties;
     }
@@ -207,8 +232,48 @@ public class JPA {
         try {
             new JPAModelLoader().load();
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new IllegalStateException("model enhancement failed", e);
         }
+    }
+
+    public static synchronized void shutdown() {
+        RuntimeException failure = null;
+        if (jpaConfig != null) {
+            // JPAConfig.close closes every registered context before the EMF:
+            // an open EntityManager keeps a pooled connection/transaction and
+            // can block schema cleanup. Pool and model cleanup still run if it
+            // reports a failure.
+            try {
+                jpaConfig.close();
+            } catch (RuntimeException e) {
+                failure = e;
+            } finally {
+                jpaConfig = null;
+            }
+        }
+        try {
+            net.csdn.modules.persist.mysql.MysqlClient.closeAllPools();
+        } catch (RuntimeException e) {
+            if (failure == null) {
+                failure = e;
+            }
+        }
+        models.clear();
+        ModelClass.ROOTS.clear();
+        ModelClass.CTModelClasses.clear();
+        ormConfiguration = null;
+        if (failure != null) {
+            throw failure;
+        }
+    }
+
+    /**
+     * Engine of the configured primary datasource, or {@code mysql} when no
+     * datasource is configured (legacy mongo-only applications).
+     */
+    public static String engine() {
+        JdbcEngine.Selection selection = JdbcEngine.primaryOrAbsent(settings(), mode());
+        return selection == null ? JdbcEngine.MYSQL : selection.engine();
     }
 
     public static void injector(Injector injector) {
@@ -315,7 +380,22 @@ public class JPA {
         }
 
         public void buildDefaultDbType() {
-            dbType = new MysqlType();
+            String mapping = settings.get("type_mapping");
+            if (mapping == null || mapping.trim().length() == 0) {
+                JdbcEngine.Selection selection = JdbcEngine.primaryOrAbsent(settings, mode);
+                mapping = JdbcEngine.defaultDbType(selection == null ? JdbcEngine.MYSQL : selection.engine());
+            }
+            try {
+                Class<?> type = Class.forName(mapping, false, getClassLoader());
+                if (!DBType.class.isAssignableFrom(type)) {
+                    throw new IllegalStateException("type_mapping does not implement DBType: " + mapping);
+                }
+                dbType = (DBType) type.newInstance();
+            } catch (IllegalStateException failure) {
+                throw failure;
+            } catch (Exception e) {
+                throw new IllegalStateException("type_mapping class was not loaded: " + mapping, e);
+            }
         }
 
         public void buildDefaultDBInfo() {
@@ -366,11 +446,106 @@ public class JPA {
 
         private void loadClass(CtClass ctClass) {
             try {
-                Class<Model> clzz = ctClass.toClass(JPA.classLoader(), JPA.class.getProtectionDomain());
+                Class<Model> clzz = (Class<Model>) defineModelClass(ctClass);
                 JPA.models.put(clzz.getSimpleName(), clzz);
             } catch (CannotCompileException e) {
-                e.printStackTrace();
+                throw new IllegalStateException("model class was not defined: " + ctClass.getName(), e);
             }
         }
+    }
+
+    /*
+     * Classes defined by enhancement, keyed by class name. The map outlives
+     * shutdown() because a defined class stays defined; on JDK 9+ a previously
+     * defined model in the same package is also the neighbor javassist needs
+     * for Lookup-based definition.
+     */
+    private static final Map<String, Class<?>> definedModelClasses = new HashMap<String, Class<?>>();
+
+    private static boolean java8Runtime() {
+        return System.getProperty("java.specification.version", "").startsWith("1.");
+    }
+
+    private static Class<?> defineModelClass(CtClass ctClass) throws CannotCompileException {
+        enforceClassVersion(ctClass);
+        ClassLoader loader = JPA.classLoader();
+        java.security.ProtectionDomain domain = JPA.class.getProtectionDomain();
+        // Reuse a class this configuration already defined. Probing
+        // Class.forName here would define the plain unenhanced class instead.
+        Class<?> existing = definedModelClasses.get(ctClass.getName());
+        if (existing != null && existing.getClassLoader() == loader) {
+            return existing;
+        }
+        if (java8Runtime()) {
+            Class<?> defined = ctClass.toClass(loader, domain);
+            definedModelClasses.put(ctClass.getName(), defined);
+            return defined;
+        }
+        Class<?> neighbor = neighborFor(ctClass, loader);
+        if (neighbor != null) {
+            Class<?> defined = JPA.classPool().toClass(ctClass, neighbor, loader, neighbor.getProtectionDomain());
+            definedModelClasses.put(ctClass.getName(), defined);
+            return defined;
+        }
+        try {
+            // JDK 9-15 still allow javassist's reflective defineClass path.
+            Class<?> defined = ctClass.toClass(loader, domain);
+            definedModelClasses.put(ctClass.getName(), defined);
+            return defined;
+        } catch (CannotCompileException failure) {
+            String packageName = ctClass.getPackageName();
+            throw new CannotCompileException(
+                    "cannot define " + ctClass.getName() + " on this JDK; add a class named "
+                            + packageName + ".ActiveOrmPackageAnchor to the model package",
+                    failure);
+        }
+    }
+
+    private static Class<?> neighborFor(CtClass ctClass, ClassLoader loader) {
+        String packageName = ctClass.getPackageName();
+        for (Map.Entry<String, Class<?>> entry : definedModelClasses.entrySet()) {
+            Class<?> defined = entry.getValue();
+            String definedPackage = packageName(defined.getName());
+            if (definedPackage.equals(packageName) && defined.getClassLoader() == loader) {
+                return defined;
+            }
+        }
+        String[] anchors = {"ActiveOrmPackageAnchor", "ServiceFrameworkPackageAnchor"};
+        for (String anchor : anchors) {
+            String name = packageName == null || packageName.length() == 0 ? anchor : packageName + "." + anchor;
+            try {
+                return Class.forName(name, false, loader);
+            } catch (ClassNotFoundException ignored) {
+            }
+        }
+        return null;
+    }
+
+    private static String packageName(String className) {
+        String name = className;
+        int dollar = name.indexOf('$');
+        if (dollar >= 0) {
+            name = name.substring(0, dollar);
+        }
+        int dot = name.lastIndexOf('.');
+        return dot < 0 ? "" : name.substring(0, dot);
+    }
+
+    private static void enforceClassVersion(CtClass ctClass) throws CannotCompileException {
+        if (ctClass.isFrozen()) {
+            ctClass.defrost();
+        }
+        javassist.bytecode.ClassFile file = ctClass.getClassFile();
+        try {
+            java.net.URL resource = ctClass.getURL();
+            if (resource != null && file.getMajorVersion() > javassist.bytecode.ClassFile.JAVA_8) {
+                throw new CannotCompileException(
+                        "class file major version " + file.getMajorVersion()
+                                + " is newer than Java 8 (52); compile models with --release 8; resource=" + resource);
+            }
+        } catch (javassist.NotFoundException ignored) {
+        }
+        file.setMajorVersion(javassist.bytecode.ClassFile.JAVA_8);
+        file.setMinorVersion(0);
     }
 }

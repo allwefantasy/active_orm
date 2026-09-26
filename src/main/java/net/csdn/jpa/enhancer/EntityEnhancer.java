@@ -14,6 +14,7 @@ import net.csdn.common.logging.Loggers;
 import net.csdn.common.settings.Settings;
 import net.csdn.enhancer.BitEnhancer;
 import net.csdn.jpa.JPA;
+import net.csdn.jpa.JdbcEngine;
 import net.csdn.jpa.type.DBInfo;
 import net.csdn.jpa.type.DBType;
 import org.apache.commons.lang.StringUtils;
@@ -194,7 +195,8 @@ public class EntityEnhancer implements BitEnhancer {
                     if (ctField.getName().equals("discriminator")) continue;
                     if (ctField.getName().equals("id")) {
                         createAnnotation(ctField, javax.persistence.Id.class, map());
-                        createAnnotation(ctField, javax.persistence.GeneratedValue.class, map());
+                        createAnnotation(ctField, javax.persistence.GeneratedValue.class,
+                                map("strategy", identityStrategy(constPool)));
                     } else {
                         createAnnotation(ctField, Column.class, map("name", new StringMemberValue(Strings.toUnderscoreCase(ctField.getName()), constPool), "nullable", new BooleanMemberValue(true, constPool)));
                     }
@@ -268,13 +270,30 @@ public class EntityEnhancer implements BitEnhancer {
         if (tuple != null) {
             EnhancerHelper.createAnnotation(ctField, tuple.v1(), tuple.v2());
         }
+        // Hibernate 4 maps java.util.UUID to bytea; a PostgreSQL uuid column
+        // needs PostgresUUIDType (setObject Types.OTHER).
+        if ("UUID".equals(fieldType) && JdbcEngine.POSTGRES.equals(JPA.engine())
+                && !ctField.hasAnnotation(org.hibernate.annotations.Type.class)) {
+            EnhancerHelper.createAnnotation(ctField, org.hibernate.annotations.Type.class,
+                    map("type", new StringMemberValue("org.hibernate.type.PostgresUUIDType", constPool)));
+        }
         String fieldName = ctField.getName();
         if (fieldName.equals("id")) {
             EnhancerHelper.createAnnotation(ctField, javax.persistence.Id.class, map());
-            EnhancerHelper.createAnnotation(ctField, javax.persistence.GeneratedValue.class, map());
+            EnhancerHelper.createAnnotation(ctField, javax.persistence.GeneratedValue.class,
+                    map("strategy", identityStrategy(constPool)));
         } else {
             EnhancerHelper.createAnnotation(ctField, Column.class, map("name", new StringMemberValue(Strings.toUnderscoreCase(fieldName), constPool), "nullable", new BooleanMemberValue(true, constPool)));
         }
+    }
+
+    //IDENTITY works for MySQL auto_increment and PostgreSQL identity/serial ids;
+    //GenerationType.AUTO would ask PostgreSQL for a hibernate_sequence instead.
+    private static EnumMemberValue identityStrategy(ConstPool constPool) {
+        EnumMemberValue emv = new EnumMemberValue(constPool);
+        emv.setType(javax.persistence.GenerationType.class.getName());
+        emv.setValue(javax.persistence.GenerationType.IDENTITY.name());
+        return emv;
     }
 
     boolean isFinal(CtField ctField) {
